@@ -13,22 +13,26 @@ var pool *pgxpool.Pool
 
 // init function to initialize the connection pool
 func Init() (*pgxpool.Pool, error) {
-	// Load environment variables from .env file
-	if err := godotenv.Load(); err != nil {
+	dbURL, err := GetDBUrl()
+	if err != nil {
 		return nil, err
 	}
 
-	// Retrieve the database details from environment variables
-	dbURL := os.Getenv("DB_URL")
-
 	// Create a connection pool
-	var err error
 	pool, err = pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		return nil, err
 	}
 
 	return pool, nil
+}
+
+func GetDBUrl() (string, error) {
+	if err := godotenv.Load(); err != nil {
+		return "", err
+	}
+
+	return os.Getenv("DB_URL"), nil
 }
 
 func Close(pool *pgxpool.Pool) {
