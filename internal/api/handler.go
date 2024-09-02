@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"calometer/internal/db"
+	"calometer/internal/lib"
 
 	"github.com/google/uuid"
 )
@@ -27,55 +28,57 @@ func GreetingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type User struct {
-	Name   string `json:"name"`
-	Age    int    `json:"age"`
-	Height int    `json:"height"`
-	Weight int    `json:"weight"`
-	Gender string `json:"gender"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func UsersCreateHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the JSON body
+func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	var user User
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
-	// Validate the input
-	if len(user.Gender) != 1 || user.Name == "" || user.Age <= 0 || user.Height <= 0 || user.Weight <= 0 {
+	if user.Email == "" || user.Password == "" || user.Name == "" {
 		http.Error(w, "Invalid input data", http.StatusBadRequest)
 		return
 	}
 
-	// Prepare the SQL query
-	qStr := `
-		INSERT INTO users (name, age, height, weight, gender)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id
-	`
-
-	var userId uuid.UUID
-	if err := db.GetPool().QueryRow(
-		context.Background(),
-		qStr, user.Name,
-		user.Age,
-		user.Height,
-		user.Weight,
-		user.Gender,
-	).Scan(&userId); err != nil {
-		http.Error(w, "Failed to add to user", http.StatusInternalServerError)
+	doesExist, err := lib.DoesUserExists(user.Email)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	// Create the response with code and data
+	if *doesExist {
+		http.Error(w, "User with this email already exists", http.StatusConflict)
+		return
+	}
+
+	password, err := lib.HashPassword(user.Password)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
+	// Save user to the database
+	qStr := `
+	INSERT INTO users (name, email, password_hash)
+	VALUES ($1, $2, $3)
+	RETURNING id
+  `
+
+	var userId uuid.UUID
+	if err := db.GetPool().QueryRow(context.Background(), qStr, user.Name, user.Email, password).Scan(&userId); err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+
 	response := Response{
 		Code: http.StatusOK,
 		Data: map[string]uuid.UUID{"user_id": userId},
 	}
 
-	// Set the response header and send the JSON response
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(&response)
 }
