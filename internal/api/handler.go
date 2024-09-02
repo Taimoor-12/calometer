@@ -17,16 +17,6 @@ type Response struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
-// Test endpoint
-func GreetingHandler(w http.ResponseWriter, r *http.Request) {
-	var greeting string
-	if err := db.GetPool().QueryRow(context.Background(), "SELECT 'Hello, World'").Scan(&greeting); err != nil {
-		http.Error(w, "Query failed", http.StatusInternalServerError)
-		return
-	}
-	fmt.Fprintln(w, greeting)
-}
-
 type User struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
