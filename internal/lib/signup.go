@@ -16,16 +16,16 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), nil
 }
 
-func DoesUserExists(email string) (*bool, error) {
+func DoesUserExists(username string) (*bool, error) {
 	qStr := `
 		SELECT EXISTS (
 			SELECT 1
 			FROM users
-			WHERE email = $1
+			WHERE username = $1
 		)`
 
 	var doesExist bool
-	if err := db.GetPool().QueryRow(context.Background(), qStr, email).Scan(&doesExist); err != nil {
+	if err := db.GetPool().QueryRow(context.Background(), qStr, username).Scan(&doesExist); err != nil {
 		return nil, err
 	}
 

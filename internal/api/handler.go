@@ -18,7 +18,7 @@ type Response struct {
 
 type User struct {
 	Name     string `json:"name"`
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -29,19 +29,19 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if user.Email == "" || user.Password == "" || user.Name == "" {
+	if user.Username == "" || user.Password == "" || user.Name == "" {
 		http.Error(w, "Invalid input data", http.StatusBadRequest)
 		return
 	}
 
-	doesExist, err := lib.DoesUserExists(user.Email)
+	doesExist, err := lib.DoesUserExists(user.Username)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
 	if *doesExist {
-		http.Error(w, "User with this email already exists", http.StatusConflict)
+		http.Error(w, "Username already exists", http.StatusConflict)
 		return
 	}
 
@@ -52,13 +52,13 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Save user to the database
 	qStr := `
-	INSERT INTO users (name, email, password_hash)
+	INSERT INTO users (name, username, password_hash)
 	VALUES ($1, $2, $3)
 	RETURNING id
   `
 
 	var userId uuid.UUID
-	if err := db.GetPool().QueryRow(context.Background(), qStr, user.Name, user.Email, password).Scan(&userId); err != nil {
+	if err := db.GetPool().QueryRow(context.Background(), qStr, user.Name, user.Username, password).Scan(&userId); err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
