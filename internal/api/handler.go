@@ -16,14 +16,14 @@ type Response struct {
 	Data interface{} `json:"data,omitempty"`
 }
 
-type User struct {
+type SignupReq struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	var user User
+	var user SignupReq
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
