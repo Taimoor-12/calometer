@@ -11,10 +11,6 @@ import (
 )
 
 func main() {
-	// Init logger
-	logger.InitLogger()
-	defer logger.Sync()
-
 	log := logger.GetLogger()
 
 	log.Info(
