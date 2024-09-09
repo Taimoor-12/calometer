@@ -54,21 +54,27 @@ func main() {
 			log.Fatalf("Failed to create migration instance: %v", err)
 		}
 
-		// Attempt to fix dirty state by forcefully marking migration as complete
+		// Run migrations only if there are unapplied migrations
 		err = m.Up()
-		if err != nil && err != migrate.ErrNoChange {
-			log.Printf("Migration error: %v\n", err)
-			// Handling dirty state
-			if err := m.Force(-1); err != nil {
-				log.Fatalf("Failed to force migration state: %v", err)
+		if err != nil {
+			if err == migrate.ErrNoChange {
+				log.Println("No new migrations to apply.")
+			} else {
+				log.Printf("Migration error: %v\n", err)
+
+				// Handle dirty state and retry
+				if dirtyErr := m.Force(-1); dirtyErr != nil {
+					log.Fatalf("Failed to force migration state: %v", dirtyErr)
+				}
+				log.Println("Dirty state fixed. Retrying migration.")
+				if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+					log.Fatalf("Failed to reapply migrations: %v", err)
+				} else {
+					log.Println("Migrations applied successfully after fixing dirty state.")
+				}
 			}
-			log.Println("Dirty state fixed. Retrying migration.")
-			if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-				log.Fatalf("Failed to reapply migrations: %v", err)
-			}
-			log.Println("Migrations applied successfully")
 		} else {
-			log.Println("Migrations applied successfully")
+			log.Println("Migrations applied successfully.")
 		}
 	default:
 		log.Fatalf("Unknown command: %s\n", command)
