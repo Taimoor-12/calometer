@@ -9,7 +9,7 @@ import (
 
 var logger *zap.Logger
 
-func InitLogger() {
+func initLogger() {
 	// Configure logger
 	logConf := zap.NewProductionConfig()
 	logConf.EncoderConfig.LevelKey = "l"
@@ -24,11 +24,10 @@ func InitLogger() {
 }
 
 func GetLogger() *zap.Logger {
-	return logger
-}
-
-func Sync() {
-	if logger != nil {
-		_ = logger.Sync()
+	if logger == nil {
+		initLogger()
+		logger.Sync()
 	}
+
+	return logger
 }
