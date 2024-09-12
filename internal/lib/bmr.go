@@ -7,11 +7,11 @@ func CalculateBMR(
 	height_cm int,
 ) float64 {
 	var bmr float64
-	// Using Mifflin-St Jeor Equation
+	// Using Harris-Benedict Equation
 	if gender == 'M' {
-		bmr = (10 * weight_kg) + (6.25 * float64(height_cm)) - (5 * float64(age)) + 5
+		bmr = 66.5 + (13.75 * float64(weight_kg)) + (5.003 * float64(height_cm)) - (6.75 * float64(age))
 	} else {
-		bmr = (10 * weight_kg) + (6.25 * float64(height_cm)) - (5 * float64(age)) - 161
+		bmr = 655.1 + (9.563 * float64(weight_kg)) + (1.850 * float64(height_cm)) - (4.676 * float64(age))
 	}
 
 	return bmr
