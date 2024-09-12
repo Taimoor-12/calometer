@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -76,6 +77,31 @@ func main() {
 		} else {
 			log.Println("Migrations applied successfully.")
 		}
+	case "down":
+		if len(args) < 1 {
+			log.Fatalf("Usage: %s down <number_of_steps>\n", os.Args[0])
+		}
+		stepsStr := args[0]
+		steps, _ := strconv.Atoi(stepsStr)
+
+		migrationsDir := "internal/db/migrations"
+		sourceURL := "file://" + migrationsDir
+
+		m, err := migrate.New(
+			sourceURL,
+			dbURL,
+		)
+		if err != nil {
+			log.Fatalf("Failed to create migration instance: %v", err)
+		}
+
+		// Rollback by the specified number of steps
+		err = m.Steps(-1 * steps)
+		if err != nil {
+			log.Fatalf("Failed to rollback migrations: %v", err)
+		}
+
+		log.Println("Rollback action executed successfully!")
 	default:
 		log.Fatalf("Unknown command: %s\n", command)
 	}
