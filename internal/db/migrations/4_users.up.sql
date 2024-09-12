@@ -1,0 +1,5 @@
+BEGIN;
+
+ALTER TABLE user_body_details ADD COLUMN bmr DECIMAL(6, 2) NOT NULL;
+
+END;

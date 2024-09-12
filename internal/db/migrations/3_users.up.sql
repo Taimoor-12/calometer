@@ -1,3 +1,5 @@
+BEGIN;
+
 ALTER TABLE users ADD CONSTRAINT unique_username UNIQUE (username);
 
 CREATE TABLE IF NOT EXISTS user_body_details (
@@ -8,3 +10,5 @@ CREATE TABLE IF NOT EXISTS user_body_details (
   weight_kg DECIMAL(5,2) NOT NULL,
   gender CHAR(1) NOT NULL CHECK (gender IN ('M', 'F'))
 );
+
+END;
