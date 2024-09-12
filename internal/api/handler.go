@@ -202,6 +202,7 @@ type AddBodyDetailsReq struct {
 	Weight_kg float64 `json:"weight"`
 	Height_cm int     `json:"height"`
 	Gender    string  `json:"gender"`
+	Goal      string  `json:"goal,omitempty"`
 }
 
 func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
@@ -238,6 +239,9 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 			zap.String("tokenStr", tokenStr),
 			zap.Error(err),
 		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
 	if err := lib.AddUserBodyDetails(
@@ -249,6 +253,67 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 	); err != nil {
 		log.Info(
 			"failed to add user body details by id",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	resp := Response{
+		Code: http.StatusOK,
+	}
+	json.NewEncoder(w).Encode(&resp)
+}
+
+type SetUserWeightGoalReq struct {
+	Goal string `json:"goal"`
+}
+
+func SetUserWeightGoalHandler(w http.ResponseWriter, r *http.Request) {
+	// Check for JWT in the request
+	tokenStr := lib.ExtractTokenFromHeader(r)
+	if tokenStr == "" {
+		// No token found in the request header
+		http.Error(w, "User not authenticated. Please provide a valid token.", http.StatusUnauthorized)
+		return
+	}
+
+	// Validate the JWT
+	if err := lib.ValidateToken(tokenStr); err != nil {
+		// Token is invalid
+		http.Error(w, "Invalid token. Please authenticate again.", http.StatusUnauthorized)
+		return
+	}
+
+	var req SetUserWeightGoalReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Info(
+			"failed to decode incoming json",
+			zap.Error(err),
+		)
+
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	userId, err := lib.ExtractUserIdFromToken(tokenStr)
+	if err != nil {
+		log.Info(
+			"failed to extract username from token",
+			zap.String("tokenStr", tokenStr),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := lib.SetUserGoal(*userId, req.Goal); err != nil {
+		log.Info(
+			"failed to set user's goal by id",
 			zap.String("userId", userId.String()),
 			zap.Error(err),
 		)

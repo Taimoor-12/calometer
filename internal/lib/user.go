@@ -97,3 +97,27 @@ func AddUserBodyDetails(userId uuid.UUID, age int, height_cm int, weight_kg floa
 
 	return nil
 }
+
+func SetUserGoal(userId uuid.UUID, goal string) error {
+	qStr := `
+		INSERT INTO user_weight_goal (
+			u_id,
+			goal
+		) VALUES (
+			$1,
+			$2
+		) ON CONFLICT (u_id) DO UPDATE
+		SET goal = COALESCE(NULLIF($2, ''), user_weight_goal.goal)
+		`
+
+	if _, err := db.GetPool().Exec(
+		context.Background(),
+		qStr,
+		userId,
+		goal,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
