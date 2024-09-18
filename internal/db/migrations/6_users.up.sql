@@ -1,0 +1,15 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS user_calorie_logs (
+  id UUID PRIMARY KEY DEFAULT UUID_GENERATE_V4(),
+  u_id UUID NOT NULL,
+  log_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  calories_burnt DECIMAL(6, 2),
+  calories_consumed DECIMAL(6, 2),
+  tdee DECIMAL(6, 2),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT unique_user_log UNIQUE (u_id, log_date)
+);
+
+END;
