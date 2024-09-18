@@ -10,6 +10,7 @@ import (
 func SetupRouter() *mux.Router {
 	router := mux.NewRouter()
 
+	// Middlewares
 	authMiddleware := alice.New(AuthMiddleWare)
 	setInitialTDEEMiddleware := alice.New(AuthMiddleWare, SetInitialTDEEMiddleware)
 
