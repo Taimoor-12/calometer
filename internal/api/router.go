@@ -10,14 +10,15 @@ import (
 func SetupRouter() *mux.Router {
 	router := mux.NewRouter()
 
-	logCaloriesConsumedMiddleware := alice.New(AuthMiddleWare, SetInitialTDEEMiddleware)
+	authMiddleware := alice.New(AuthMiddleWare)
+	setInitialTDEEMiddleware := alice.New(AuthMiddleWare, SetInitialTDEEMiddleware)
 
 	// Define routes
 	router.HandleFunc("/api/users/signup", SignUpHandler).Methods(http.MethodPost)
 	router.HandleFunc("/api/users/login", LoginHandler).Methods(http.MethodPost)
-	router.HandleFunc("/api/users/add_body_details", AddBodyDetailsHandler).Methods(http.MethodPost)
-	router.HandleFunc("/api/users/set_weight_goal", SetUserWeightGoalHandler).Methods(http.MethodPost)
 
-	router.Handle("/api/users/log_calories/consumed", logCaloriesConsumedMiddleware.Then(http.HandlerFunc(LogCaloriesConsumedHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/add_body_details", authMiddleware.Then(http.HandlerFunc(AddBodyDetailsHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/set_weight_goal", authMiddleware.Then(http.HandlerFunc(SetUserWeightGoalHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/log_calories/consumed", setInitialTDEEMiddleware.Then(http.HandlerFunc(LogCaloriesConsumedHandler))).Methods(http.MethodPost)
 	return router
 }

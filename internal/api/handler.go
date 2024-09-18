@@ -206,18 +206,15 @@ type AddBodyDetailsReq struct {
 }
 
 func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
-	// Check for JWT in the request
-	tokenStr := lib.ExtractTokenFromHeader(r)
-	if tokenStr == "" {
-		// No token found in the request header
-		http.Error(w, "User not authenticated. Please provide a valid token.", http.StatusUnauthorized)
-		return
-	}
+	// Retrieve the token from the context
+	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
+	if !ok {
+		log.Info(
+			"token not found in context",
+		)
 
-	// Validate the JWT
-	if err := lib.ValidateToken(tokenStr); err != nil {
-		// Token is invalid
-		http.Error(w, "Invalid token. Please authenticate again.", http.StatusUnauthorized)
+		// Token is not present in context
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
@@ -273,18 +270,15 @@ type SetUserWeightGoalReq struct {
 }
 
 func SetUserWeightGoalHandler(w http.ResponseWriter, r *http.Request) {
-	// Check for JWT in the request
-	tokenStr := lib.ExtractTokenFromHeader(r)
-	if tokenStr == "" {
-		// No token found in the request header
-		http.Error(w, "User not authenticated. Please provide a valid token.", http.StatusUnauthorized)
-		return
-	}
+	// Retrieve the token from the context
+	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
+	if !ok {
+		log.Info(
+			"token not found in context",
+		)
 
-	// Validate the JWT
-	if err := lib.ValidateToken(tokenStr); err != nil {
-		// Token is invalid
-		http.Error(w, "Invalid token. Please authenticate again.", http.StatusUnauthorized)
+		// Token is not present in context
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
