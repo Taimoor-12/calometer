@@ -328,3 +328,49 @@ func SetUserWeightGoalHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	json.NewEncoder(w).Encode(&resp)
 }
+
+type LogCaloriesConsumedHandlerReq struct {
+	Consumed float64 `json:"consumed"`
+}
+
+func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the userId from the context
+	userId, ok := r.Context().Value(UserIdContextKey).(uuid.UUID)
+	if !ok {
+		log.Info(
+			"userId not found in context",
+		)
+
+		// UserId is not present in context
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var req LogCaloriesConsumedHandlerReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Info(
+			"failed to decode incoming json",
+			zap.Error(err),
+		)
+
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if err := lib.LogCaloriesConsumed(userId, req.Consumed); err != nil {
+		log.Info(
+			"failed to log calories consumed by id",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	resp := Response{
+		Code: http.StatusOK,
+	}
+	json.NewEncoder(w).Encode(&resp)
+}
