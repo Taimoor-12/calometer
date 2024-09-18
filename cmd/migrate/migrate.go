@@ -64,9 +64,15 @@ func main() {
 				log.Printf("Migration error: %v\n", err)
 
 				// Handle dirty state and retry
-				if dirtyErr := m.Force(-1); dirtyErr != nil {
+				version, err := db.GetLatestMigrationVersion()
+				if err != nil {
+					log.Fatalf("Failed to get latest migration version: %v", err)
+				}
+
+				if dirtyErr := m.Force(*version); dirtyErr != nil {
 					log.Fatalf("Failed to force migration state: %v", dirtyErr)
 				}
+
 				log.Println("Dirty state fixed. Retrying migration.")
 				if err := m.Up(); err != nil && err != migrate.ErrNoChange {
 					log.Fatalf("Failed to reapply migrations: %v", err)
@@ -81,6 +87,7 @@ func main() {
 		if len(args) < 1 {
 			log.Fatalf("Usage: %s down <number_of_steps>\n", os.Args[0])
 		}
+
 		stepsStr := args[0]
 		steps, _ := strconv.Atoi(stepsStr)
 
