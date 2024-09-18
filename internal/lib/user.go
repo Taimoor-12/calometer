@@ -3,6 +3,7 @@ package lib
 import (
 	"calometer/internal/db"
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -116,6 +117,75 @@ func SetUserGoal(userId uuid.UUID, goal string) error {
 		userId,
 		goal,
 	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DoesCalorieLogForUserExist(userId uuid.UUID) (*bool, error) {
+	var logExists bool
+
+	qStr := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM user_calorie_logs
+			WHERE u_id = $1
+		)
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId).Scan(&logExists); err != nil {
+		return nil, err
+	}
+
+	return &logExists, nil
+}
+
+func GetUserBmr(userId uuid.UUID) (*float64, error) {
+	var bmr float64
+
+	qStr := `
+		SELECT bmr
+		FROM user_body_details
+		WHERE u_id = $1
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId).Scan(&bmr); err != nil {
+		return nil, err
+	}
+
+	return &bmr, nil
+}
+
+func SetInitialUserTdee(userId uuid.UUID, bmr float64) error {
+	qStr := `
+		INSERT INTO user_calorie_logs (
+			u_id,
+			tdee
+		) VALUES (
+			$1,
+			$2
+		)
+	`
+	if _, err := db.GetPool().Exec(context.Background(), qStr, userId, bmr); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64) error {
+	currentDate := time.Now().Format("2006-01-02")
+
+	qStr := `
+		UPDATE user_calorie_logs
+		SET
+			calories_consumed = COALESCE(user_calorie_logs.calories_consumed, 0) + $2,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE u_id = $1 AND log_date = $3
+		`
+
+	if _, err := db.GetPool().Exec(context.Background(), qStr, userId, caloriesConsumed, currentDate); err != nil {
 		return err
 	}
 
