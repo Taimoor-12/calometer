@@ -66,7 +66,7 @@ func SetInitialTDEEMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		exists, err := lib.DoesCalorieLogForUserExist(*userId)
+		exists, err := lib.DoesLogExistForToday(*userId)
 		if err != nil {
 			log.Info(
 				"failed to determine user log's existence",
