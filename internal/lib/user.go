@@ -175,15 +175,7 @@ func SetInitialUserTdee(userId uuid.UUID, bmr float64) error {
 	return nil
 }
 
-func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64, logDate time.Time) error {
-	var currentDate string
-
-	if logDate.IsZero() {
-		currentDate = time.Now().Format("2006-01-02")
-	} else {
-		currentDate = logDate.Format("2006-01-02")
-	}
-
+func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64, logDate string) error {
 	qStr := `
 		UPDATE user_calorie_logs
 		SET
@@ -197,7 +189,7 @@ func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64, logDate tim
 		qStr,
 		userId,
 		caloriesConsumed,
-		currentDate,
+		logDate,
 	); err != nil {
 		return err
 	}
@@ -205,15 +197,7 @@ func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64, logDate tim
 	return nil
 }
 
-func LogCaloriesBurnt(userId uuid.UUID, caloriesBurnt float64, logDate time.Time) error {
-	var currentDate string
-
-	if logDate.IsZero() {
-		currentDate = time.Now().Format("2006-01-02")
-	} else {
-		currentDate = logDate.Format("2006-01-02")
-	}
-
+func LogCaloriesBurnt(userId uuid.UUID, caloriesBurnt float64, logDate string) error {
 	qStr := `
 		UPDATE user_calorie_logs
 		SET
@@ -227,7 +211,7 @@ func LogCaloriesBurnt(userId uuid.UUID, caloriesBurnt float64, logDate time.Time
 		qStr,
 		userId,
 		caloriesBurnt,
-		currentDate,
+		logDate,
 	); err != nil {
 		return err
 	}
@@ -235,15 +219,8 @@ func LogCaloriesBurnt(userId uuid.UUID, caloriesBurnt float64, logDate time.Time
 	return nil
 }
 
-func FetchCaloriesConsumedForTheDay(userId uuid.UUID, logDate time.Time) (*float64, error) {
-	var currentTime string
+func FetchCaloriesConsumedForTheDay(userId uuid.UUID, logDate string) (*float64, error) {
 	var caloriesConsumed float64
-
-	if logDate.IsZero() {
-		currentTime = time.Now().Format("2006-01-02")
-	} else {
-		currentTime = logDate.Format("2006-01-02")
-	}
 
 	qStr := `
 		SELECT calories_consumed
@@ -251,22 +228,15 @@ func FetchCaloriesConsumedForTheDay(userId uuid.UUID, logDate time.Time) (*float
 		WHERE u_id = $1 AND log_date = $2
 	`
 
-	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, currentTime).Scan(&caloriesConsumed); err != nil {
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, logDate).Scan(&caloriesConsumed); err != nil {
 		return nil, err
 	}
 
 	return &caloriesConsumed, nil
 }
 
-func FetchCaloriesBurntForTheDay(userId uuid.UUID, logDate time.Time) (*float64, error) {
-	var currentTime string
+func FetchCaloriesBurntForTheDay(userId uuid.UUID, logDate string) (*float64, error) {
 	var caloriesBurnt float64
-
-	if logDate.IsZero() {
-		currentTime = time.Now().Format("2006-01-02")
-	} else {
-		currentTime = logDate.Format("2006-01-02")
-	}
 
 	qStr := `
 		SELECT calories_burnt
@@ -274,9 +244,29 @@ func FetchCaloriesBurntForTheDay(userId uuid.UUID, logDate time.Time) (*float64,
 		WHERE u_id = $1 AND log_date = $2
 	`
 
-	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, currentTime).Scan(&caloriesBurnt); err != nil {
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, logDate).Scan(&caloriesBurnt); err != nil {
 		return nil, err
 	}
 
 	return &caloriesBurnt, nil
+}
+
+func AddCaloriesBurntInTDEE(userId uuid.UUID, logDate string, caloriesBurnt float64) error {
+	qStr := `
+		UPDATE user_calorie_logs
+		SET tdee = user_calorie_logs.tdee + $3
+		WHERE u_id = $1 AND log_date = $2
+	`
+
+	if _, err := db.GetPool().Exec(
+		context.Background(),
+		qStr,
+		userId,
+		logDate,
+		caloriesBurnt,
+	); err != nil {
+		return err
+	}
+
+	return nil
 }

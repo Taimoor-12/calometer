@@ -353,19 +353,20 @@ func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currValue, err := lib.FetchCaloriesConsumedForTheDay(userId, req.LogDate)
-	if err != nil {
-		var logDate string
-		if req.LogDate.IsZero() {
-			logDate = time.Now().Format("2006-01-02")
-		} else {
-			logDate = req.LogDate.Format("2006-01-02")
-		}
+	var logDate string
+	if req.LogDate.IsZero() {
+		logDate = time.Now().Format("2006-01-02")
+	} else {
+		logDate = req.LogDate.Format("2006-01-02")
+	}
 
+	currValue, err := lib.FetchCaloriesConsumedForTheDay(userId, logDate)
+	if err != nil {
 		log.Info(
 			"failed to fetch calories consumed by id and date",
 			zap.String("userId", userId.String()),
 			zap.String("logDate", logDate),
+			zap.Error(err),
 		)
 
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -377,7 +378,7 @@ func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := lib.LogCaloriesConsumed(userId, req.Consumed, req.LogDate); err != nil {
+	if err := lib.LogCaloriesConsumed(userId, req.Consumed, logDate); err != nil {
 		log.Info(
 			"failed to log calories consumed by id",
 			zap.String("userId", userId.String()),
@@ -424,19 +425,20 @@ func LogCaloriesBurntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currValue, err := lib.FetchCaloriesBurntForTheDay(userId, req.LogDate)
-	if err != nil {
-		var logDate string
-		if req.LogDate.IsZero() {
-			logDate = time.Now().Format("2006-01-02")
-		} else {
-			logDate = req.LogDate.Format("2006-01-02")
-		}
+	var logDate string
+	if req.LogDate.IsZero() {
+		logDate = time.Now().Format("2006-01-02")
+	} else {
+		logDate = req.LogDate.Format("2006-01-02")
+	}
 
+	currValue, err := lib.FetchCaloriesBurntForTheDay(userId, logDate)
+	if err != nil {
 		log.Info(
 			"failed to fetch calories burnt by id and date",
 			zap.String("userId", userId.String()),
 			zap.String("logDate", logDate),
+			zap.Error(err),
 		)
 
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -448,10 +450,22 @@ func LogCaloriesBurntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := lib.LogCaloriesBurnt(userId, req.Burnt, req.LogDate); err != nil {
+	if err := lib.LogCaloriesBurnt(userId, req.Burnt, logDate); err != nil {
 		log.Info(
 			"failed to log calories burnt by id",
 			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := lib.AddCaloriesBurntInTDEE(userId, logDate, req.Burnt); err != nil {
+		log.Info(
+			"failed to add burnt calories in tdee by id and date",
+			zap.String("userId", userId.String()),
+			zap.String("logDate", logDate),
 			zap.Error(err),
 		)
 
