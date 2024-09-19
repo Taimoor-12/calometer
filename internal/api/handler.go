@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"calometer/internal/db"
 	"calometer/internal/lib"
@@ -324,7 +325,8 @@ func SetUserWeightGoalHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type LogCaloriesConsumedHandlerReq struct {
-	Consumed float64 `json:"consumed"`
+	Consumed float64   `json:"consumed"`
+	LogDate  time.Time `json:"log_date,omitempty"`
 }
 
 func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
@@ -351,9 +353,104 @@ func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := lib.LogCaloriesConsumed(userId, req.Consumed); err != nil {
+	currValue, err := lib.FetchCaloriesConsumedForTheDay(userId, req.LogDate)
+	if err != nil {
+		var logDate string
+		if req.LogDate.IsZero() {
+			logDate = time.Now().Format("2006-01-02")
+		} else {
+			logDate = req.LogDate.Format("2006-01-02")
+		}
+
+		log.Info(
+			"failed to fetch calories consumed by id and date",
+			zap.String("userId", userId.String()),
+			zap.String("logDate", logDate),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if *currValue+req.Consumed < 0 {
+		http.Error(w, "Resulting calories consumed can't be negative", http.StatusBadRequest)
+		return
+	}
+
+	if err := lib.LogCaloriesConsumed(userId, req.Consumed, req.LogDate); err != nil {
 		log.Info(
 			"failed to log calories consumed by id",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	resp := Response{
+		Code: http.StatusOK,
+	}
+	json.NewEncoder(w).Encode(&resp)
+}
+
+type LogCaloriesBurntHandlerReq struct {
+	Burnt   float64   `json:"burnt"`
+	LogDate time.Time `json:"log_date,omitempty"`
+}
+
+func LogCaloriesBurntHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the userId from the context
+	userId, ok := r.Context().Value(UserIdContextKey).(uuid.UUID)
+	if !ok {
+		log.Info(
+			"userId not found in context",
+		)
+
+		// UserId is not present in context
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var req LogCaloriesBurntHandlerReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Info(
+			"failed to decode incoming json",
+			zap.Error(err),
+		)
+
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	currValue, err := lib.FetchCaloriesBurntForTheDay(userId, req.LogDate)
+	if err != nil {
+		var logDate string
+		if req.LogDate.IsZero() {
+			logDate = time.Now().Format("2006-01-02")
+		} else {
+			logDate = req.LogDate.Format("2006-01-02")
+		}
+
+		log.Info(
+			"failed to fetch calories burnt by id and date",
+			zap.String("userId", userId.String()),
+			zap.String("logDate", logDate),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if *currValue+req.Burnt < 0 {
+		http.Error(w, "Resulting calories burnt can't be negative", http.StatusBadRequest)
+		return
+	}
+
+	if err := lib.LogCaloriesBurnt(userId, req.Burnt, req.LogDate); err != nil {
+		log.Info(
+			"failed to log calories burnt by id",
 			zap.String("userId", userId.String()),
 			zap.Error(err),
 		)
