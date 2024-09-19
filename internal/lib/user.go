@@ -192,7 +192,13 @@ func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64, logDate tim
 		WHERE u_id = $1 AND log_date = $3
 		`
 
-	if _, err := db.GetPool().Exec(context.Background(), qStr, userId, caloriesConsumed, currentDate); err != nil {
+	if _, err := db.GetPool().Exec(
+		context.Background(),
+		qStr,
+		userId,
+		caloriesConsumed,
+		currentDate,
+	); err != nil {
 		return err
 	}
 
@@ -216,7 +222,13 @@ func LogCaloriesBurnt(userId uuid.UUID, caloriesBurnt float64, logDate time.Time
 		WHERE u_id = $1 AND log_date = $3
 		`
 
-	if _, err := db.GetPool().Exec(context.Background(), qStr, userId, caloriesBurnt, currentDate); err != nil {
+	if _, err := db.GetPool().Exec(
+		context.Background(),
+		qStr,
+		userId,
+		caloriesBurnt,
+		currentDate,
+	); err != nil {
 		return err
 	}
 
