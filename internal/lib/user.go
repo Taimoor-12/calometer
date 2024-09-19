@@ -123,18 +123,19 @@ func SetUserGoal(userId uuid.UUID, goal string) error {
 	return nil
 }
 
-func DoesCalorieLogForUserExist(userId uuid.UUID) (*bool, error) {
+func DoesLogExistForToday(userId uuid.UUID) (*bool, error) {
+	currentDate := time.Now().Format("2006-01-02")
 	var logExists bool
 
 	qStr := `
 		SELECT EXISTS (
 			SELECT 1
 			FROM user_calorie_logs
-			WHERE u_id = $1
+			WHERE u_id = $1 AND log_date = $2
 		)
 	`
 
-	if err := db.GetPool().QueryRow(context.Background(), qStr, userId).Scan(&logExists); err != nil {
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, currentDate).Scan(&logExists); err != nil {
 		return nil, err
 	}
 
@@ -174,8 +175,14 @@ func SetInitialUserTdee(userId uuid.UUID, bmr float64) error {
 	return nil
 }
 
-func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64) error {
-	currentDate := time.Now().Format("2006-01-02")
+func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64, logDate time.Time) error {
+	var currentDate string
+
+	if logDate.IsZero() {
+		currentDate = time.Now().Format("2006-01-02")
+	} else {
+		currentDate = logDate.Format("2006-01-02")
+	}
 
 	qStr := `
 		UPDATE user_calorie_logs
@@ -190,4 +197,74 @@ func LogCaloriesConsumed(userId uuid.UUID, caloriesConsumed float64) error {
 	}
 
 	return nil
+}
+
+func LogCaloriesBurnt(userId uuid.UUID, caloriesBurnt float64, logDate time.Time) error {
+	var currentDate string
+
+	if logDate.IsZero() {
+		currentDate = time.Now().Format("2006-01-02")
+	} else {
+		currentDate = logDate.Format("2006-01-02")
+	}
+
+	qStr := `
+		UPDATE user_calorie_logs
+		SET
+			calories_burnt = COALESCE(user_calorie_logs.calories_burnt, 0) + $2,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE u_id = $1 AND log_date = $3
+		`
+
+	if _, err := db.GetPool().Exec(context.Background(), qStr, userId, caloriesBurnt, currentDate); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func FetchCaloriesConsumedForTheDay(userId uuid.UUID, logDate time.Time) (*float64, error) {
+	var currentTime string
+	var caloriesConsumed float64
+
+	if logDate.IsZero() {
+		currentTime = time.Now().Format("2006-01-02")
+	} else {
+		currentTime = logDate.Format("2006-01-02")
+	}
+
+	qStr := `
+		SELECT calories_consumed
+		FROM user_calorie_logs
+		WHERE u_id = $1 AND log_date = $2
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, currentTime).Scan(&caloriesConsumed); err != nil {
+		return nil, err
+	}
+
+	return &caloriesConsumed, nil
+}
+
+func FetchCaloriesBurntForTheDay(userId uuid.UUID, logDate time.Time) (*float64, error) {
+	var currentTime string
+	var caloriesBurnt float64
+
+	if logDate.IsZero() {
+		currentTime = time.Now().Format("2006-01-02")
+	} else {
+		currentTime = logDate.Format("2006-01-02")
+	}
+
+	qStr := `
+		SELECT calories_burnt
+		FROM user_calorie_logs
+		WHERE u_id = $1 AND log_date = $2
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, currentTime).Scan(&caloriesBurnt); err != nil {
+		return nil, err
+	}
+
+	return &caloriesBurnt, nil
 }
