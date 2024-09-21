@@ -270,3 +270,87 @@ func AddCaloriesBurntInTDEE(userId uuid.UUID, logDate string, caloriesBurnt floa
 
 	return nil
 }
+
+func MarkLoggingStatus(userId uuid.UUID, logDate string, logStatus string) error {
+	qStr := `
+		UPDATE user_calorie_logs
+		SET log_status = $3
+		WHERE u_id = $1 AND log_date = $2
+	`
+
+	if _, err := db.GetPool().Exec(
+		context.Background(),
+		qStr,
+		userId,
+		logDate,
+		logStatus,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CalculateCaloricBalanceForTheDay(userId uuid.UUID, logDate string) (*float64, error) {
+	var caloricBalance float64
+
+	qStr := `
+		SELECT (tdee - calories_consumed) AS caloric_balance
+		FROM user_calorie_logs
+		WHERE u_id = $1 AND log_date = $2 AND log_status = 'D'
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, logDate).Scan(&caloricBalance); err != nil {
+		return nil, err
+	}
+
+	return &caloricBalance, nil
+}
+
+func GetCalorieLogId(userId uuid.UUID, logDate string) (*uuid.UUID, error) {
+	var calorieLogId uuid.UUID
+
+	qStr := `
+		SELECT id
+		FROM user_calorie_logs
+		WHERE u_id = $1 AND log_date = $2
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, logDate).Scan(&calorieLogId); err != nil {
+		return nil, err
+	}
+
+	return &calorieLogId, nil
+}
+
+func AddCaloricBalanceForTheDay(logId uuid.UUID, caloricBalance float64) error {
+	qStr := `
+		INSERT INTO user_caloric_balance (
+			calorie_log_id,
+			caloric_balance
+		) VALUES (
+			$1,
+			$2
+		)
+	`
+
+	if _, err := db.GetPool().Exec(context.Background(), qStr, logId, caloricBalance); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ResetCaloricBalanceForTheDay(logId uuid.UUID) error {
+	qStr := `
+		UPDATE user_caloric_balance
+		SET caloric_balance = 0.00
+		WHERE calorie_log_id = $1
+	`
+
+	if _, err := db.GetPool().Exec(context.Background(), qStr, logId); err != nil {
+		return err
+	}
+
+	return nil
+}
