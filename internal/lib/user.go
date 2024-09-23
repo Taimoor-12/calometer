@@ -123,8 +123,7 @@ func SetUserGoal(userId uuid.UUID, goal string) error {
 	return nil
 }
 
-func DoesLogExistForToday(userId uuid.UUID) (*bool, error) {
-	currentDate := time.Now().Format("2006-01-02")
+func DoesLogExistForTheDay(userId uuid.UUID, logDate string) (*bool, error) {
 	var logExists bool
 
 	qStr := `
@@ -135,7 +134,7 @@ func DoesLogExistForToday(userId uuid.UUID) (*bool, error) {
 		)
 	`
 
-	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, currentDate).Scan(&logExists); err != nil {
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, logDate).Scan(&logExists); err != nil {
 		return nil, err
 	}
 
@@ -158,17 +157,19 @@ func GetUserBmr(userId uuid.UUID) (*float64, error) {
 	return &bmr, nil
 }
 
-func SetInitialUserTdee(userId uuid.UUID, bmr float64) error {
+func CreateUserLog(userId uuid.UUID, bmr float64, logDate string) error {
 	qStr := `
 		INSERT INTO user_calorie_logs (
 			u_id,
-			tdee
+			tdee,
+			log_date
 		) VALUES (
 			$1,
-			$2
+			$2,
+			$3
 		)
 	`
-	if _, err := db.GetPool().Exec(context.Background(), qStr, userId, bmr); err != nil {
+	if _, err := db.GetPool().Exec(context.Background(), qStr, userId, bmr, logDate); err != nil {
 		return err
 	}
 
@@ -353,4 +354,61 @@ func ResetCaloricBalanceForTheDay(logId uuid.UUID) error {
 	}
 
 	return nil
+}
+
+type UserCalorieLogs struct {
+	LogDate          string
+	CaloriesBurnt    float64
+	CaloriesConsumed float64
+	Tdee             float64
+	Updated_at       time.Time
+	LogStatus        string
+}
+
+func GetCalorieLogs(userId uuid.UUID) (*[]UserCalorieLogs, error) {
+	var userCalorieLogs []UserCalorieLogs
+
+	qStr := `
+		SELECT
+			log_date,
+			calories_burnt,
+			calories_consumed,
+			tdee,
+			updated_at,
+			log_status
+		FROM user_calorie_logs
+		WHERE u_id = $1
+	`
+
+	rows, err := db.GetPool().Query(context.Background(), qStr, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var log UserCalorieLogs
+		var logDate time.Time
+
+		err := rows.Scan(
+			&logDate,
+			&log.CaloriesBurnt,
+			&log.CaloriesConsumed,
+			&log.Tdee,
+			&log.Updated_at,
+			&log.LogStatus,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		log.LogDate = logDate.Format("2006-01-02")
+
+		userCalorieLogs = append(userCalorieLogs, log)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &userCalorieLogs, nil
 }
