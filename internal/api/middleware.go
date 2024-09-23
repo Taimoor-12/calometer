@@ -4,8 +4,6 @@ import (
 	"calometer/internal/lib"
 	"context"
 	"net/http"
-
-	"go.uber.org/zap"
 )
 
 type contextKey string
@@ -34,73 +32,6 @@ func AuthMiddleWare(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), TokenContextKey, tokenStr)
-		r = r.WithContext(ctx)
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func SetInitialTDEEMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Retrieve the token from the context
-		tokenStr, ok := r.Context().Value(TokenContextKey).(string)
-		if !ok {
-			log.Info(
-				"token not found in context",
-			)
-
-			// Token is not present in context
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		userId, err := lib.ExtractUserIdFromToken(tokenStr)
-		if err != nil {
-			log.Info(
-				"failed to get user id by token",
-				zap.String("userId", userId.String()),
-				zap.Error(err),
-			)
-
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		exists, err := lib.DoesLogExistForToday(*userId)
-		if err != nil {
-			log.Info(
-				"failed to determine user log's existence",
-				zap.String("userId", userId.String()),
-				zap.Error(err),
-			)
-		}
-
-		if !*exists {
-			bmr, err := lib.GetUserBmr(*userId)
-			if err != nil {
-				log.Info(
-					"failed to get user bmr by id",
-					zap.String("userId", userId.String()),
-					zap.Error(err),
-				)
-
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
-
-			if err := lib.SetInitialUserTdee(*userId, *bmr); err != nil {
-				log.Info(
-					"failed to set user's tdee by id",
-					zap.String("userId", userId.String()),
-					zap.Error(err),
-				)
-
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
-		}
-
-		ctx := context.WithValue(r.Context(), UserIdContextKey, *userId)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
