@@ -412,3 +412,47 @@ func GetCalorieLogs(userId uuid.UUID) (*[]UserCalorieLogs, error) {
 
 	return &userCalorieLogs, nil
 }
+
+func UpdateCalorieLog(
+	userId uuid.UUID,
+	logDate string,
+	caloriesConsumed float64,
+	caloriesBurnt float64,
+) error {
+	qStr := `
+		UPDATE user_calorie_logs
+		SET
+			calories_consumed = user_calorie_logs.calories_consumed + $3,
+			calories_burnt = user_calorie_logs.calories_burnt + $4
+		WHERE u_id = $1 AND log_date = $2
+	`
+
+	if _, err := db.GetPool().Exec(
+		context.Background(),
+		qStr,
+		userId,
+		logDate,
+		caloriesConsumed,
+		caloriesBurnt,
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CheckLogStatusByIdAndDate(userId uuid.UUID, logDate string) (*string, error) {
+	var logStatus string
+
+	qStr := `
+		SELECT log_status
+		FROM user_calorie_logs
+		WHERE u_id = $1 AND log_date = $2
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId, logDate).Scan(&logStatus); err != nil {
+		return nil, err
+	}
+
+	return &logDate, nil
+}
