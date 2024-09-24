@@ -456,3 +456,29 @@ func CheckLogStatusByIdAndDate(userId uuid.UUID, logDate string) (*string, error
 
 	return &logDate, nil
 }
+
+func DeleteCalorieLog(userId uuid.UUID, logDate string) error {
+	qStr := `
+		DELETE FROM user_calorie_logs
+		WHERE u_id = $1 AND log_date = $2
+	`
+
+	if _, err := db.GetPool().Exec(context.Background(), qStr, userId, logDate); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteCaloricBalanceByLogId(logId uuid.UUID) error {
+	qStr := `
+		DELETE FROM user_caloric_balance
+		WHERE calorie_log_id = $1
+	`
+
+	if _, err := db.GetPool().Exec(context.Background(), qStr, logId); err != nil {
+		return err
+	}
+
+	return nil
+}
