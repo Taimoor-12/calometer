@@ -482,3 +482,37 @@ func DeleteCaloricBalanceByLogId(logId uuid.UUID) error {
 
 	return nil
 }
+
+func GetNetCaloricBalance(userId uuid.UUID) (*float64, error) {
+	var netCaloricBalance float64
+
+	qStr := `
+		SELECT SUM(user_caloric_balance.caloric_balance)
+		FROM user_calorie_logs
+		JOIN user_caloric_balance
+		ON user_calorie_logs.id = user_caloric_balance.calorie_log_id
+		WHERE user_calorie_logs.u_id = $1
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId).Scan(&netCaloricBalance); err != nil {
+		return nil, err
+	}
+
+	return &netCaloricBalance, nil
+}
+
+func GetUserWeightGoalById(userId uuid.UUID) (*string, error) {
+	var goal string
+
+	qStr := `
+		SELECT goal
+		FROM user_weight_goal
+		WHERE u_id = $1
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId).Scan(&goal); err != nil {
+		return nil, err
+	}
+
+	return &goal, nil
+}

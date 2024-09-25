@@ -26,5 +26,7 @@ func SetupRouter() *mux.Router {
 	router.Handle("/api/users/log/mark_status", authMiddleware.Then(http.HandlerFunc(MarkLoggingStatusHandler))).Methods(http.MethodPost)
 	router.Handle("/api/users/log/delete", authMiddleware.Then(http.HandlerFunc(DeleteCalorieLogHandler))).Methods(http.MethodDelete)
 
+	router.Handle("/api/users/net_caloric_balance/get", authMiddleware.Then(http.HandlerFunc(GetNetCaloricBalanceHandler))).Methods(http.MethodGet)
+
 	return router
 }
