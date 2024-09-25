@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"net/http"
 	"time"
 
@@ -324,25 +325,148 @@ func SetUserWeightGoalHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&resp)
 }
 
-type LogCaloriesConsumedHandlerReq struct {
-	Consumed float64   `json:"consumed"`
-	LogDate  time.Time `json:"log_date,omitempty"`
+type MarkLoggingStatusReq struct {
+	Status  string    `json:"status"`
+	LogDate time.Time `json:"log_date"`
 }
 
-func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the userId from the context
-	userId, ok := r.Context().Value(UserIdContextKey).(uuid.UUID)
+func MarkLoggingStatusHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the token from the context
+	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
 	if !ok {
 		log.Info(
-			"userId not found in context",
+			"token not found in context",
 		)
 
-		// UserId is not present in context
+		// Token is not present in context
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	var req LogCaloriesConsumedHandlerReq
+	userId, err := lib.ExtractUserIdFromToken(tokenStr)
+	if err != nil {
+		log.Info(
+			"failed to get user id by token",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var req MarkLoggingStatusReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Info(
+			"failed to decode incoming json",
+			zap.Error(err),
+		)
+
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	logDate := req.LogDate.Format("2006-01-02")
+
+	if err := lib.MarkLoggingStatus(*userId, logDate, req.Status); err != nil {
+		log.Info(
+			"failed to mark logging status by id and date",
+			zap.String("userId", userId.String()),
+			zap.String("logDate", logDate),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	calorieLogId, err := lib.GetCalorieLogId(*userId, logDate)
+	if err != nil {
+		log.Info(
+			"failed to get calorie log by id and date",
+			zap.String("userId", userId.String()),
+			zap.String("logDate", logDate),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if req.Status == "D" {
+		caloricBalance, err := lib.CalculateCaloricBalanceForTheDay(*userId, logDate)
+		if err != nil {
+			log.Info(
+				"failed to calculate caloric balance by id and date",
+				zap.String("userId", userId.String()),
+				zap.String("logDate", logDate),
+				zap.Error(err),
+			)
+
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		if err := lib.AddCaloricBalanceForTheDay(*calorieLogId, *caloricBalance); err != nil {
+			log.Info(
+				"failed to add caloric balance by log id",
+				zap.String("logId", calorieLogId.String()),
+				zap.Error(err),
+			)
+
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	} else {
+		if err := lib.ResetCaloricBalanceForTheDay(*calorieLogId); err != nil {
+			log.Info(
+				"failed to reset caloric balance by log id",
+				zap.String("logId", calorieLogId.String()),
+				zap.Error(err),
+			)
+
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+	resp := Response{
+		Code: http.StatusOK,
+	}
+	json.NewEncoder(w).Encode(&resp)
+}
+
+type CreateCalorieLogReq struct {
+	LogDate time.Time `json:"log_date,omitempty"`
+}
+
+func CreateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the token from the context
+	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
+	if !ok {
+		log.Info(
+			"token not found in context",
+		)
+
+		// Token is not present in context
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	userId, err := lib.ExtractUserIdFromToken(tokenStr)
+	if err != nil {
+		log.Info(
+			"failed to get user id by token",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var req CreateCalorieLogReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Info(
 			"failed to decode incoming json",
@@ -357,15 +481,20 @@ func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
 	if req.LogDate.IsZero() {
 		logDate = time.Now().Format("2006-01-02")
 	} else {
+		// Check if the logDate is in the future
+		if req.LogDate.After(time.Now()) {
+			http.Error(w, "Log date cannot be a future date", http.StatusBadRequest)
+			return
+		}
+
 		logDate = req.LogDate.Format("2006-01-02")
 	}
 
-	currValue, err := lib.FetchCaloriesConsumedForTheDay(userId, logDate)
+	exists, err := lib.DoesLogExistForTheDay(*userId, logDate)
 	if err != nil {
 		log.Info(
-			"failed to fetch calories consumed by id and date",
+			"failed to determine user log's existence",
 			zap.String("userId", userId.String()),
-			zap.String("logDate", logDate),
 			zap.Error(err),
 		)
 
@@ -373,14 +502,26 @@ func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if *currValue+req.Consumed < 0 {
-		http.Error(w, "Resulting calories consumed can't be negative", http.StatusBadRequest)
+	if *exists {
+		http.Error(w, "Log already exists for this day", http.StatusConflict)
 		return
 	}
 
-	if err := lib.LogCaloriesConsumed(userId, req.Consumed, logDate); err != nil {
+	bmr, err := lib.GetUserBmr(*userId)
+	if err != nil {
 		log.Info(
-			"failed to log calories consumed by id",
+			"failed to get user bmr by id",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := lib.CreateUserLog(*userId, *bmr, logDate); err != nil {
+		log.Info(
+			"failed to create user log by id",
 			zap.String("userId", userId.String()),
 			zap.Error(err),
 		)
@@ -396,25 +537,84 @@ func LogCaloriesConsumedHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&resp)
 }
 
-type LogCaloriesBurntHandlerReq struct {
-	Burnt   float64   `json:"burnt"`
-	LogDate time.Time `json:"log_date,omitempty"`
-}
-
-func LogCaloriesBurntHandler(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the userId from the context
-	userId, ok := r.Context().Value(UserIdContextKey).(uuid.UUID)
+func GetCalorieLogs(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the token from the context
+	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
 	if !ok {
 		log.Info(
-			"userId not found in context",
+			"token not found in context",
 		)
 
-		// UserId is not present in context
+		// Token is not present in context
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 
-	var req LogCaloriesBurntHandlerReq
+	userId, err := lib.ExtractUserIdFromToken(tokenStr)
+	if err != nil {
+		log.Info(
+			"failed to get user id by token",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var userCalorieLogs *[]lib.UserCalorieLogs
+	userCalorieLogs, err = lib.GetCalorieLogs(*userId)
+	if err != nil {
+		log.Info(
+			"failed to get logs by user id",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	resp := Response{
+		Code: http.StatusOK,
+		Data: userCalorieLogs,
+	}
+	json.NewEncoder(w).Encode(&resp)
+}
+
+type UpdateCalorieLogReq struct {
+	CaloriesConsumed float64   `json:"calories_consumed"`
+	CaloriesBurnt    float64   `json:"calories_burnt"`
+	LogDate          time.Time `json:"log_date"`
+}
+
+func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the token from the context
+	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
+	if !ok {
+		log.Info(
+			"token not found in context",
+		)
+
+		// Token is not present in context
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	userId, err := lib.ExtractUserIdFromToken(tokenStr)
+	if err != nil {
+		log.Info(
+			"failed to get user id by token",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var req UpdateCalorieLogReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Info(
 			"failed to decode incoming json",
@@ -425,17 +625,12 @@ func LogCaloriesBurntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var logDate string
-	if req.LogDate.IsZero() {
-		logDate = time.Now().Format("2006-01-02")
-	} else {
-		logDate = req.LogDate.Format("2006-01-02")
-	}
+	logDate := req.LogDate.Format("2006-01-02")
 
-	currValue, err := lib.FetchCaloriesBurntForTheDay(userId, logDate)
+	logStatus, err := lib.CheckLogStatusByIdAndDate(*userId, logDate)
 	if err != nil {
 		log.Info(
-			"failed to fetch calories burnt by id and date",
+			"failed to check log status by id and date",
 			zap.String("userId", userId.String()),
 			zap.String("logDate", logDate),
 			zap.Error(err),
@@ -445,25 +640,66 @@ func LogCaloriesBurntHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if *currValue+req.Burnt < 0 {
-		http.Error(w, "Resulting calories burnt can't be negative", http.StatusBadRequest)
+	if *logStatus == "D" {
+		http.Error(w, "Log is already completed", http.StatusConflict)
 		return
 	}
 
-	if err := lib.LogCaloriesBurnt(userId, req.Burnt, logDate); err != nil {
-		log.Info(
-			"failed to log calories burnt by id",
-			zap.String("userId", userId.String()),
-			zap.Error(err),
-		)
+	if req.CaloriesBurnt != 0.00 {
+		currValue, err := lib.FetchCaloriesBurntForTheDay(*userId, logDate)
+		if err != nil {
+			log.Info(
+				"failed to fetch calories burnt by id and date",
+				zap.String("userId", userId.String()),
+				zap.String("logDate", logDate),
+				zap.Error(err),
+			)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		if *currValue+req.CaloriesBurnt < 0 {
+			http.Error(w, "Resulting calories burnt can't be negative", http.StatusBadRequest)
+			return
+		}
+
+		if err := lib.AddCaloriesBurntInTDEE(*userId, logDate, req.CaloriesBurnt); err != nil {
+			log.Info(
+				"failed to add burnt calories in tdee by id and date",
+				zap.String("userId", userId.String()),
+				zap.String("logDate", logDate),
+				zap.Error(err),
+			)
+
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 	}
 
-	if err := lib.AddCaloriesBurntInTDEE(userId, logDate, req.Burnt); err != nil {
+	if req.CaloriesConsumed != 0.00 {
+		currValue, err := lib.FetchCaloriesConsumedForTheDay(*userId, logDate)
+		if err != nil {
+			log.Info(
+				"failed to fetch calories consumed by id and date",
+				zap.String("userId", userId.String()),
+				zap.String("logDate", logDate),
+				zap.Error(err),
+			)
+
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		if *currValue+req.CaloriesConsumed < 0 {
+			http.Error(w, "Resulting calories consumed can't be negative", http.StatusBadRequest)
+			return
+		}
+	}
+
+	if err := lib.UpdateCalorieLog(*userId, logDate, req.CaloriesConsumed, req.CaloriesBurnt); err != nil {
 		log.Info(
-			"failed to add burnt calories in tdee by id and date",
+			"failed to update calorie log by id and date",
 			zap.String("userId", userId.String()),
 			zap.String("logDate", logDate),
 			zap.Error(err),
@@ -477,5 +713,179 @@ func LogCaloriesBurntHandler(w http.ResponseWriter, r *http.Request) {
 	resp := Response{
 		Code: http.StatusOK,
 	}
+	json.NewEncoder(w).Encode(&resp)
+}
+
+type DeleteCalorieLogReq struct {
+	LogDate time.Time `json:"log_date"`
+}
+
+func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the token from the context
+	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
+	if !ok {
+		log.Info(
+			"token not found in context",
+		)
+
+		// Token is not present in context
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	userId, err := lib.ExtractUserIdFromToken(tokenStr)
+	if err != nil {
+		log.Info(
+			"failed to get user id by token",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	var req DeleteCalorieLogReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Info(
+			"failed to decode incoming json",
+			zap.Error(err),
+		)
+
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	var logDate string
+	// Check if the logDate is in the future
+	if req.LogDate.After(time.Now()) {
+		http.Error(w, "Log date cannot be a future date", http.StatusBadRequest)
+		return
+	}
+
+	logDate = req.LogDate.Format("2006-01-02")
+
+	exists, err := lib.DoesLogExistForTheDay(*userId, logDate)
+	if err != nil {
+		log.Info(
+			"failed to determine user log's existence by id and date",
+			zap.String("userId", userId.String()),
+			zap.String("logDate", logDate),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if !*exists {
+		http.Error(w, "No log exists for this day", http.StatusConflict)
+		return
+	}
+
+	logId, err := lib.GetCalorieLogId(*userId, logDate)
+	if err != nil {
+		log.Info(
+			"failed to get logId by id and date",
+			zap.String("userId", userId.String()),
+			zap.String("logDate", logDate),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := lib.DeleteCaloricBalanceByLogId(*logId); err != nil {
+		log.Info(
+			"failed to delete caloric balance by log id",
+			zap.String("logId", logId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := lib.DeleteCalorieLog(*userId, logDate); err != nil {
+		log.Info(
+			"failed to delete log by id and date",
+			zap.String("userId", userId.String()),
+			zap.String("logDate", logDate),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	resp := Response{
+		Code: http.StatusOK,
+	}
+	json.NewEncoder(w).Encode(&resp)
+}
+
+func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
+	// Retrieve the token from the context
+	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
+	if !ok {
+		log.Info(
+			"token not found in context",
+		)
+
+		// Token is not present in context
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	userId, err := lib.ExtractUserIdFromToken(tokenStr)
+	if err != nil {
+		log.Info(
+			"failed to get user id by token",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	netCaloricBalance, err := lib.GetNetCaloricBalance(*userId)
+	if err != nil {
+		log.Info(
+			"failed to get net caloric balance by id",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	weightGoal, err := lib.GetUserWeightGoalById(*userId)
+	if err != nil {
+		log.Info(
+			"failed to get user weight goal by id",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if *netCaloricBalance < 0 && *weightGoal == "G" {
+		*netCaloricBalance = math.Abs(*netCaloricBalance)
+	} else if *netCaloricBalance > 0 && *weightGoal == "G" {
+		*netCaloricBalance = -*netCaloricBalance
+	}
+
+	resp := Response{
+		Code: http.StatusOK,
+		Data: *netCaloricBalance,
+	}
+
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(&resp)
 }
