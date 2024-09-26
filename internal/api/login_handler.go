@@ -8,9 +8,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type LoginReq struct {
+type LoginHandlerReq struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type LoginHandlerResp struct {
+	Token string `json:"token"`
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -30,7 +34,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var req LoginReq
+	var req LoginHandlerReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Info("failed to decode incoming json")
 		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
@@ -97,9 +101,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+
+	data := &LoginHandlerResp{
+		Token: token,
+	}
+
 	resp := Response{
 		Code: http.StatusOK,
-		Data: map[string]string{"token": token},
+		Data: data,
 	}
 	json.NewEncoder(w).Encode(&resp)
 }

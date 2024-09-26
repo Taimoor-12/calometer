@@ -8,6 +8,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type GetCaloricLogsHandlerResp struct {
+	Logs *[]lib.UserCalorieLogs `json:"logs"`
+}
+
 func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the token from the context
 	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
@@ -47,9 +51,13 @@ func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+
+	data := &GetCaloricLogsHandlerResp{
+		Logs: userCalorieLogs,
+	}
 	resp := Response{
 		Code: http.StatusOK,
-		Data: userCalorieLogs,
+		Data: data,
 	}
 	json.NewEncoder(w).Encode(&resp)
 }

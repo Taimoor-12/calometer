@@ -9,6 +9,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type GetNetCaloricBalanceHandlerResp struct {
+	NetCaloricBalance float64 `json:"net_caloric_balance"`
+}
+
 func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the token from the context
 	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
@@ -64,9 +68,13 @@ func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
 		*netCaloricBalance = -*netCaloricBalance
 	}
 
+	data := &GetNetCaloricBalanceHandlerResp{
+		NetCaloricBalance: *netCaloricBalance,
+	}
+
 	resp := Response{
 		Code: http.StatusOK,
-		Data: *netCaloricBalance,
+		Data: data,
 	}
 
 	w.WriteHeader(http.StatusOK)

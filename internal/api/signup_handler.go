@@ -12,14 +12,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type SignupReq struct {
+type SignupHandlerReq struct {
 	Name     string `json:"name"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
+type SignupHandlerResp struct {
+	UserId uuid.UUID `json:"u_id"`
+}
+
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	var user SignupReq
+	var user SignupHandlerReq
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		log.Info("failed to decode incoming json")
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
@@ -82,12 +86,15 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
-	response := Response{
-		Code: http.StatusOK,
-		Data: map[string]uuid.UUID{"user_id": userId},
+	w.WriteHeader(http.StatusOK)
+
+	data := &SignupHandlerResp{
+		UserId: userId,
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(&response)
+	resp := Response{
+		Code: http.StatusOK,
+		Data: data,
+	}
+	json.NewEncoder(w).Encode(&resp)
 }
