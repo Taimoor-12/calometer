@@ -21,7 +21,7 @@ func SetupRouter() *mux.Router {
 	router.Handle("/api/users/set_weight_goal", authMiddleware.Then(http.HandlerFunc(SetUserWeightGoalHandler))).Methods(http.MethodPost)
 
 	router.Handle("/api/users/log/create", authMiddleware.Then(http.HandlerFunc(CreateCalorieLogHandler))).Methods(http.MethodPost)
-	router.Handle("/api/users/log/get", authMiddleware.Then(http.HandlerFunc(GetCalorieLogs))).Methods(http.MethodGet)
+	router.Handle("/api/users/log/get", authMiddleware.Then(http.HandlerFunc(GetCalorieLogsHandler))).Methods(http.MethodGet)
 	router.Handle("/api/users/log/update", authMiddleware.Then(http.HandlerFunc(UpdateCalorieLogHandler))).Methods(http.MethodPut)
 	router.Handle("/api/users/log/mark_status", authMiddleware.Then(http.HandlerFunc(MarkLoggingStatusHandler))).Methods(http.MethodPost)
 	router.Handle("/api/users/log/delete", authMiddleware.Then(http.HandlerFunc(DeleteCalorieLogHandler))).Methods(http.MethodDelete)
