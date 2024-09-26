@@ -62,6 +62,15 @@ func GenerateJWT(userId uuid.UUID, username string) (string, error) {
 	return tokenStr, nil
 }
 
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes), nil
+}
+
 func GetHashedPass(username string) (string, error) {
 	qStr := `
 		SELECT password_hash
