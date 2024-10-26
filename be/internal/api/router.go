@@ -11,11 +11,12 @@ func SetupRouter() *mux.Router {
 	router := mux.NewRouter()
 
 	// Middlewares
-	authMiddleware := alice.New(AuthMiddleWare)
+	enableCORSMiddleware := alice.New(EnableCORS)
+	authMiddleware := enableCORSMiddleware.Append(AuthMiddleWare)
 
 	// Define routes
-	router.HandleFunc("/api/users/signup", SignUpHandler).Methods(http.MethodPost)
-	router.HandleFunc("/api/users/login", LoginHandler).Methods(http.MethodPost)
+	router.Handle("/api/users/signup", enableCORSMiddleware.Then(http.HandlerFunc(SignUpHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/login", enableCORSMiddleware.Then(http.HandlerFunc(LoginHandler))).Methods(http.MethodPost)
 
 	router.Handle("/api/users/add_body_details", authMiddleware.Then(http.HandlerFunc(AddBodyDetailsHandler))).Methods(http.MethodPost)
 	router.Handle("/api/users/set_weight_goal", authMiddleware.Then(http.HandlerFunc(SetUserWeightGoalHandler))).Methods(http.MethodPost)
