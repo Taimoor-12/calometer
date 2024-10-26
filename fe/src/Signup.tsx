@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import "./Signup.css";
+import { http_post } from "./lib/http";
 
 interface ValidationErrors {
   fullName?: string;
@@ -52,7 +53,7 @@ function Signup() {
         if (!value.trim()) {
           return "Confirm password is required"
         } else if (value !== formData.password) {
-          return "Passwords do no match"
+          return "Passwords do not match"
         }
         break
       default:
@@ -62,7 +63,7 @@ function Signup() {
     return undefined
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit  = async (e: React.FormEvent) => {
     e.preventDefault()
     
     const validationErrors: ValidationErrors = {}
@@ -94,6 +95,14 @@ function Signup() {
 
     if(Object.keys(validationErrors).length === 0) {
       console.log("Form submitted", formData)
+      const body = {
+        name: formData.fullName,
+        username: formData.username,
+        password: formData.password
+      }
+
+      const resp = await http_post("http://localhost:8080/api/users/signup", body)
+      console.log(resp)
     }
   };
 
