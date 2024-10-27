@@ -13,6 +13,9 @@ type GetCaloricLogsHandlerResp struct {
 }
 
 func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
+	resp := Response{}
+	resp.Code = make(map[int]string)
+
 	// Retrieve the token from the context
 	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
 	if !ok {
@@ -21,7 +24,8 @@ func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
 		)
 
 		// Token is not present in context
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -33,7 +37,8 @@ func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -46,7 +51,8 @@ func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -55,9 +61,8 @@ func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
 	data := &GetCaloricLogsHandlerResp{
 		Logs: userCalorieLogs,
 	}
-	resp := Response{
-		Code: http.StatusOK,
-		Data: data,
-	}
+
+	resp.Code[http.StatusOK] = "OK"
+	resp.Data = data
 	json.NewEncoder(w).Encode(&resp)
 }
