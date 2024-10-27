@@ -14,6 +14,9 @@ type DeleteCalorieLogReq struct {
 }
 
 func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
+	resp := Response{}
+	resp.Code = make(map[int]string)
+
 	// Retrieve the token from the context
 	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
 	if !ok {
@@ -22,7 +25,8 @@ func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 		)
 
 		// Token is not present in context
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -34,7 +38,8 @@ func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -45,14 +50,16 @@ func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		resp.Code[http.StatusBadRequest] = "Invalid JSON data."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	var logDate string
 	// Check if the logDate is in the future
 	if req.LogDate.After(time.Now()) {
-		http.Error(w, "Log date cannot be a future date", http.StatusBadRequest)
+		resp.Code[http.StatusBadRequest] = "Log date cannot be a future date."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -67,12 +74,14 @@ func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	if !*exists {
-		http.Error(w, "No log exists for this day", http.StatusConflict)
+		resp.Code[http.StatusConflict] = "No log exists for this day."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -85,7 +94,8 @@ func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -96,7 +106,8 @@ func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -108,13 +119,12 @@ func DeleteCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	resp := Response{
-		Code: http.StatusOK,
-	}
+	resp.Code[http.StatusOK] = "OK"
 	json.NewEncoder(w).Encode(&resp)
 }
