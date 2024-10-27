@@ -23,16 +23,21 @@ type SignupHandlerResp struct {
 }
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request) {
+	resp := Response{}
+	resp.Code = make(map[int]string)
+
 	var user SignupHandlerReq
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		log.Info("failed to decode incoming json")
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		resp.Code[http.StatusBadRequest] = "Please enter correct details"
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	if user.Username == "" || user.Password == "" || user.Name == "" {
 		log.Info("invalid input data")
-		http.Error(w, "Invalid input data", http.StatusBadRequest)
+		resp.Code[http.StatusBadRequest] = "Please enter correct details."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -42,13 +47,15 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			"failed to check user's existence by username",
 			zap.String("username", user.Username),
 		)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	if *doesExist {
 		log.Info("username already exists")
-		http.Error(w, "Username already exists", http.StatusConflict)
+		resp.Code[http.StatusConflict] = "Username already exists"
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -58,7 +65,9 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			"failed to hash user's password",
 			zap.String("username", user.Username),
 		)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
+		return
 	}
 
 	// Save user to the database
@@ -75,7 +84,8 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 				"username already exists",
 				zap.String("username", user.Username),
 			)
-			http.Error(w, "Username already exists", http.StatusConflict)
+			resp.Code[http.StatusConflict] = "Username already exists."
+			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 
@@ -83,7 +93,9 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 			"failed to create the user",
 			zap.String("username", user.Username),
 		)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -92,9 +104,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		UserId: userId,
 	}
 
-	resp := Response{
-		Code: http.StatusOK,
-		Data: data,
-	}
+	resp.Code[http.StatusOK] = "OK"
+	resp.Data = data
 	json.NewEncoder(w).Encode(&resp)
 }
