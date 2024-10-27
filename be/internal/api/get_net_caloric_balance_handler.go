@@ -14,6 +14,9 @@ type GetNetCaloricBalanceHandlerResp struct {
 }
 
 func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
+	resp := Response{}
+	resp.Code = make(map[int]string)
+
 	// Retrieve the token from the context
 	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
 	if !ok {
@@ -22,7 +25,8 @@ func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
 		)
 
 		// Token is not present in context
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -34,7 +38,8 @@ func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -46,7 +51,8 @@ func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -58,7 +64,8 @@ func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -72,10 +79,8 @@ func GetNetCaloricBalanceHandler(w http.ResponseWriter, r *http.Request) {
 		NetCaloricBalance: *netCaloricBalance,
 	}
 
-	resp := Response{
-		Code: http.StatusOK,
-		Data: data,
-	}
+	resp.Code[http.StatusOK] = "OK"
+	resp.Data = data
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(&resp)
