@@ -18,6 +18,9 @@ type LoginHandlerResp struct {
 }
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	resp := Response{}
+	resp.Code = make(map[int]string)
+
 	// Step 1: Check for JWT in the request
 	tokenStr := lib.ExtractTokenFromHeader(r)
 	if tokenStr != "" {
@@ -25,10 +28,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		if err := lib.ValidateToken(tokenStr); err == nil {
 			// Token is valid, return a success response
 			w.WriteHeader(http.StatusOK)
-			resp := Response{
-				Code: http.StatusOK,
-				Data: map[string]string{"token": tokenStr},
-			}
+			resp.Code[http.StatusOK] = "OK"
+			resp.Data = map[string]string{"token": tokenStr}
 			json.NewEncoder(w).Encode(&resp)
 			return
 		}
@@ -37,13 +38,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req LoginHandlerReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Info("failed to decode incoming json")
-		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		resp.Code[http.StatusBadRequest] = "Invalid JSON data."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	if req.Username == "" && req.Password == "" {
 		log.Info("invalid input data")
-		http.Error(w, "Invalid JSON data", http.StatusBadRequest)
+		resp.Code[http.StatusBadRequest] = "Please enter correct details."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -53,6 +56,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			"failed to get user id by username",
 			zap.String("username", req.Username),
 		)
+
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
+		return
 	}
 
 	exists, err := lib.DoesUserExists(req.Username)
@@ -61,12 +68,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			"failed to check user's existence by username",
 			zap.String("username", req.Username),
 		)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	if !*exists {
-		http.Error(w, "Username or Password is incorrect", http.StatusUnauthorized)
+		resp.Code[http.StatusUnauthorized] = "Username or password is incorrect."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -76,7 +85,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			"failed to fetch user's hashed password",
 			zap.String("username", req.Username),
 		)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -85,7 +95,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			"failed to check password validity",
 			zap.String("username", req.Username),
 		)
-		http.Error(w, "Username or Password is incorrect", http.StatusUnauthorized)
+		resp.Code[http.StatusUnauthorized] = "Username or password is incorrect."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -96,7 +107,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			zap.String("userId", userId.String()),
 			zap.String("username", req.Username),
 		)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -106,9 +118,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Token: token,
 	}
 
-	resp := Response{
-		Code: http.StatusOK,
-		Data: data,
-	}
+	resp.Code[http.StatusOK] = "OK"
+	resp.Data = data
 	json.NewEncoder(w).Encode(&resp)
 }
