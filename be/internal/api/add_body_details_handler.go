@@ -17,6 +17,9 @@ type AddBodyDetailsReq struct {
 }
 
 func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
+	resp := Response{}
+	resp.Code = make(map[int]string)
+
 	// Retrieve the token from the context
 	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
 	if !ok {
@@ -25,7 +28,8 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		)
 
 		// Token is not present in context
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -36,7 +40,8 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		resp.Code[http.StatusBadRequest] = "Invalid JSON data."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -48,7 +53,8 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -65,71 +71,12 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	resp := Response{
-		Code: http.StatusOK,
-	}
-	json.NewEncoder(w).Encode(&resp)
-}
-
-type SetUserWeightGoalReq struct {
-	Goal string `json:"goal"`
-}
-
-func SetUserWeightGoalHandler(w http.ResponseWriter, r *http.Request) {
-	// Retrieve the token from the context
-	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
-	if !ok {
-		log.Info(
-			"token not found in context",
-		)
-
-		// Token is not present in context
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	var req SetUserWeightGoalReq
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Info(
-			"failed to decode incoming json",
-			zap.Error(err),
-		)
-
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	userId, err := lib.ExtractUserIdFromToken(tokenStr)
-	if err != nil {
-		log.Info(
-			"failed to extract username from token",
-			zap.String("tokenStr", tokenStr),
-			zap.Error(err),
-		)
-
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	if err := lib.SetUserGoal(*userId, req.Goal); err != nil {
-		log.Info(
-			"failed to set user's goal by id",
-			zap.String("userId", userId.String()),
-			zap.Error(err),
-		)
-
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	resp := Response{
-		Code: http.StatusOK,
-	}
+	resp.Code[http.StatusOK] = "OK"
 	json.NewEncoder(w).Encode(&resp)
 }
