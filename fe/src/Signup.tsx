@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import "./Signup.css";
 import { http_post } from "./lib/http";
+import Spinner from "./components/Spinner";
+import "./Signup.css";
 
 interface ValidationErrors {
   fullName?: string;
@@ -11,6 +12,8 @@ interface ValidationErrors {
 }
 
 function Signup() {
+  const apiUrl = process.env.REACT_APP_API_URL
+
   const [formData, setFormData] = useState({
     fullName: "",
     username: "",
@@ -19,6 +22,8 @@ function Signup() {
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({})
+  const [loading, setLoading] = useState(false)
+  const [apiCallErrMsg, setApiCallErrMsg] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -94,6 +99,8 @@ function Signup() {
 
 
     if(Object.keys(validationErrors).length === 0) {
+      setLoading(true)
+      setApiCallErrMsg('')
       console.log("Form submitted", formData)
       const body = {
         name: formData.fullName,
@@ -101,8 +108,12 @@ function Signup() {
         password: formData.password
       }
 
-      const resp = await http_post("http://localhost:8080/api/users/signup", body)
-      console.log(resp)
+      const resp = await http_post(`${apiUrl}/api/users/signup`, body)
+      setLoading(false)
+      const respCode = Object.keys(resp.code)[0]
+      if (respCode !== "200") {
+        setApiCallErrMsg(resp.code[respCode])
+      }
     }
   };
 
@@ -162,7 +173,10 @@ function Signup() {
             </div>
             
             <div className="registerBtn">
-              <button type="submit">Register</button>
+              <button type="submit" disabled={loading}>
+                {loading ? <Spinner /> : "Register"}
+              </button>
+              { apiCallErrMsg && <p className="error apiErrorMsg">{apiCallErrMsg}</p> }
             </div>
           </form>
         
