@@ -24,6 +24,8 @@ function Signup() {
   const [errors, setErrors] = useState<ValidationErrors>({})
   const [loading, setLoading] = useState(false)
   const [apiCallErrMsg, setApiCallErrMsg] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -108,12 +110,22 @@ function Signup() {
         password: formData.password
       }
 
-      const resp = await http_post(`${apiUrl}/api/users/signup`, body)
-      setLoading(false)
-      const respCode = Object.keys(resp.code)[0]
-      if (respCode !== "200") {
-        setApiCallErrMsg(resp.code[respCode])
+      try {
+        const resp = await http_post(`${apiUrl}/api/users/signup`, body)
+        setLoading(false)
+        const respCode = Object.keys(resp.code)[0]
+        if (respCode !== "200" && respCode === "409") {
+          setErrors({ ...errors, ["username"]: resp.code[respCode] })
+          // setApiCallErrMsg(resp.code[respCode])
+        } else if (respCode !== "200") {
+          setApiCallErrMsg(resp.Code[respCode])
+        }
+      } catch (e) {
+        setLoading(false)
+        console.log(e)
+        setApiCallErrMsg("Something went wrong, please try again")
       }
+      
     }
   };
 
@@ -150,25 +162,35 @@ function Signup() {
 
             <div className="inputDiv">
               <p>Password</p>
-              <input 
-                type="password"
-                name="password"
-                value={formData.password} 
-                placeholder="Enter your password"
-                onChange={handleChange} 
-              />
+              <div className="passwordContainer">
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password} 
+                  placeholder="Enter your password"
+                  onChange={handleChange} 
+                />
+                <div className="showPasswordDiv" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <img src="/assets/eye.svg" alt="eye" /> : <img src="/assets/eye-off.svg" alt="eye-off" />}
+                </div>
+              </div>
               { errors.password && <p className="error">{errors.password}</p> }
             </div>
 
             <div className="inputDiv">
               <p>Confirm Password</p>
-              <input 
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword} 
-                placeholder="Enter the password again"
-                onChange={handleChange} 
-              />
+              <div className="passwordContainer">
+                <input 
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword} 
+                  placeholder="Enter the password again"
+                  onChange={handleChange} 
+                />
+                <div className="showPasswordDiv" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  {showConfirmPassword ? <img src="/assets/eye.svg" alt="eye" /> : <img src="/assets/eye-off.svg" alt="eye-off" />}
+                </div>
+              </div>
               { errors.confirmPassword && <p className="error">{errors.confirmPassword}</p> }
             </div>
             
@@ -176,8 +198,8 @@ function Signup() {
               <button type="submit" disabled={loading}>
                 {loading ? <Spinner /> : "Register"}
               </button>
-              { apiCallErrMsg && <p className="error apiErrorMsg">{apiCallErrMsg}</p> }
             </div>
+            { apiCallErrMsg && <p className="error apiErrorMsg">{apiCallErrMsg}</p> }
           </form>
         
         <p className="loginPrompt">
