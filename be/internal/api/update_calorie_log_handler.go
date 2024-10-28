@@ -16,6 +16,9 @@ type UpdateCalorieLogReq struct {
 }
 
 func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
+	resp := Response{}
+	resp.Code = make(map[int]string)
+
 	// Retrieve the token from the context
 	tokenStr, ok := r.Context().Value(TokenContextKey).(string)
 	if !ok {
@@ -24,7 +27,8 @@ func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 		)
 
 		// Token is not present in context
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -36,7 +40,8 @@ func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -47,7 +52,8 @@ func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		resp.Code[http.StatusBadRequest] = "Invalid JSON."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -62,12 +68,14 @@ func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	if *logStatus == "D" {
-		http.Error(w, "Log is already completed", http.StatusConflict)
+		resp.Code[http.StatusConflict] = "Log is already completed."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
@@ -81,12 +89,14 @@ func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 				zap.Error(err),
 			)
 
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 
 		if *currValue+req.CaloriesBurnt < 0 {
-			http.Error(w, "Resulting calories burnt can't be negative", http.StatusBadRequest)
+			resp.Code[http.StatusBadRequest] = "Resulting calories burnt can't be negative."
+			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 
@@ -98,7 +108,8 @@ func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 				zap.Error(err),
 			)
 
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 	}
@@ -113,12 +124,14 @@ func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 				zap.Error(err),
 			)
 
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 
 		if *currValue+req.CaloriesConsumed < 0 {
-			http.Error(w, "Resulting calories consumed can't be negative", http.StatusBadRequest)
+			resp.Code[http.StatusBadRequest] = "Resulting calories consumed can't be negative."
+			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 	}
@@ -131,13 +144,12 @@ func UpdateCalorieLogHandler(w http.ResponseWriter, r *http.Request) {
 			zap.Error(err),
 		)
 
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	resp := Response{
-		Code: http.StatusOK,
-	}
+	resp.Code[http.StatusOK] = "OK"
 	json.NewEncoder(w).Encode(&resp)
 }

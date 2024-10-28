@@ -30,8 +30,6 @@ input {
 }
 
 .registerBtn {
-  padding-left: 99px;
-  padding-right: 99px;
   margin-top: 60px;
 }
 
@@ -46,6 +44,8 @@ input {
   color: #FFF;
   font-weight: 400;
   cursor: pointer;
+  margin-left: 25%;
+  margin-right: 25%;
 }
 
 .loginPrompt {
@@ -68,4 +68,21 @@ input {
 .error {
   font-size: 12px;
   color: #F44336;
+}
+
+.apiErrorMsg {
+  text-align: center;
+  font-weight: 700;
+}
+
+.passwordContainer {
+  position: relative;
+}
+
+.showPasswordDiv {
+  position: absolute;
+  display: inline-block;
+  top: 12px;
+  right: 10px;
+  cursor: pointer;
 }

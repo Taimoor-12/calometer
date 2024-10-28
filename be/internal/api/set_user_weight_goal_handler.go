@@ -8,15 +8,11 @@ import (
 	"go.uber.org/zap"
 )
 
-type AddBodyDetailsReq struct {
-	Age       int     `json:"age"`
-	Weight_kg float64 `json:"weight"`
-	Height_cm int     `json:"height"`
-	Gender    string  `json:"gender"`
-	Goal      string  `json:"goal,omitempty"`
+type SetUserWeightGoalReq struct {
+	Goal string `json:"goal"`
 }
 
-func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
+func SetUserWeightGoalHandler(w http.ResponseWriter, r *http.Request) {
 	resp := Response{}
 	resp.Code = make(map[int]string)
 
@@ -33,7 +29,7 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req AddBodyDetailsReq
+	var req SetUserWeightGoalReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Info(
 			"failed to decode incoming json",
@@ -58,15 +54,9 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := lib.AddUserBodyDetails(
-		*userId,
-		req.Age,
-		req.Height_cm,
-		req.Weight_kg,
-		req.Gender,
-	); err != nil {
+	if err := lib.SetUserGoal(*userId, req.Goal); err != nil {
 		log.Info(
-			"failed to add user body details by id",
+			"failed to set user's goal by id",
 			zap.String("userId", userId.String()),
 			zap.Error(err),
 		)
