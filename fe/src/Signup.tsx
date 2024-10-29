@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { http_post } from "./lib/http";
+import { Link, useNavigate } from "react-router-dom";
+import { http_post, isRespDataWithHttpInfo } from "./lib/http";
 import Spinner from "./components/Spinner";
+import { toast } from "react-toastify";
 import "./Signup.css";
 
 interface ValidationErrors {
@@ -13,6 +14,7 @@ interface ValidationErrors {
 
 function Signup() {
   const apiUrl = process.env.REACT_APP_API_URL;
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -23,7 +25,6 @@ function Signup() {
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
-  const [apiCallErrMsg, setApiCallErrMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -101,7 +102,6 @@ function Signup() {
 
     if (Object.keys(validationErrors).length === 0) {
       setLoading(true);
-      setApiCallErrMsg("");
       console.log("Form submitted", formData);
       const body = {
         name: formData.fullName,
@@ -112,16 +112,22 @@ function Signup() {
       try {
         const resp = await http_post(`${apiUrl}/api/users/signup`, body);
         setLoading(false);
-        const respCode = Object.keys(resp.code)[0];
-        if (respCode !== "200" && respCode === "409") {
-          setErrors({ ...errors, ["username"]: resp.code[respCode] });
-        } else if (respCode !== "200") {
-          setApiCallErrMsg(resp.Code[respCode]);
+        if (isRespDataWithHttpInfo(resp)) {
+          const respCodeStr = Object.keys(resp.code)[0];
+          const respCode: number = +respCodeStr
+          if (respCode === 409) {
+            toast.error(resp.code[respCode]);
+            setErrors({ ...errors, ["username"]: resp.code[respCode] });
+          } else if (respCode === 200) {
+            toast.success("Signed up successfully. Please log in");
+            navigate("/login");
+          } else {
+            toast.error(resp.code[respCode]);
+          }
         }
       } catch (e) {
         setLoading(false);
-        console.log(e);
-        setApiCallErrMsg("Something went wrong, please try again");
+        toast.error("Something went wrong. Please try again.");
       }
     }
   };
@@ -212,9 +218,6 @@ function Signup() {
                 {loading ? <Spinner /> : "Register"}
               </button>
             </div>
-            {apiCallErrMsg && (
-              <p className="error apiErrorMsg">{apiCallErrMsg}</p>
-            )}
           </form>
 
           <p className="loginPrompt">
