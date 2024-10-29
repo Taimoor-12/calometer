@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { http_post, isRespDataWithHttpInfo } from "./lib/http";
 import Spinner from "./components/Spinner";
@@ -131,6 +131,22 @@ function Signup() {
       }
     }
   };
+
+  useEffect(() => {
+    const signupUser = async () => {
+      const resp = await http_post(`${apiUrl}/api/users/signup`, {});
+      if (isRespDataWithHttpInfo(resp)) {
+        const respCodeStr = Object.keys(resp.code)[0];
+        const respCode = +respCodeStr; // Convert string to number
+        if (respCode === 200) {
+          toast.success("Login successful"); //remove this later
+          // navigate to dashboard/home.
+        }
+      }
+    };
+
+    signupUser();
+  }, []);
 
   return (
     <div className="main">
