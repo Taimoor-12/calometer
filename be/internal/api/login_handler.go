@@ -4,6 +4,8 @@ import (
 	"calometer/internal/lib"
 	"encoding/json"
 	"net/http"
+	"os"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -21,15 +23,27 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	resp := Response{}
 	resp.Code = make(map[int]string)
 
-	// Step 1: Check for JWT in the request
-	tokenStr := lib.ExtractTokenFromHeader(r)
-	if tokenStr != "" {
-		// Step 2: Validate the JWT
-		if err := lib.ValidateToken(tokenStr); err == nil {
+	// // Step 1: Check for JWT in the request
+	// tokenStr := lib.ExtractTokenFromHeader(r)
+	// if tokenStr != "" {
+	// 	// Step 2: Validate the JWT
+	// 	if err := lib.ValidateToken(tokenStr); err == nil {
+	// 		// Token is valid, return a success response
+	// 		w.WriteHeader(http.StatusOK)
+	// 		resp.Code[http.StatusOK] = "OK"
+	// 		resp.Data = map[string]string{"token": tokenStr}
+	// 		json.NewEncoder(w).Encode(&resp)
+	// 		return
+	// 	}
+	// }
+
+	cookie, err := r.Cookie("token")
+	if err == nil {
+		// Validate the JWT
+		if err := lib.ValidateToken(cookie.Value); err == nil {
 			// Token is valid, return a success response
 			w.WriteHeader(http.StatusOK)
-			resp.Code[http.StatusOK] = "OK"
-			resp.Data = map[string]string{"token": tokenStr}
+			resp.Code[http.StatusOK] = "Logged in successfully."
 			json.NewEncoder(w).Encode(&resp)
 			return
 		}
@@ -112,13 +126,17 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set the JWT as an HttpOnly cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   os.Getenv("APP_ENV") == "production",
+		Expires:  time.Now().Add(time.Hour * 24),
+	})
+
 	w.WriteHeader(http.StatusOK)
-
-	data := &LoginHandlerResp{
-		Token: token,
-	}
-
-	resp.Code[http.StatusOK] = "OK"
-	resp.Data = data
+	resp.Code[http.StatusOK] = "Logged in successfully."
 	json.NewEncoder(w).Encode(&resp)
 }
