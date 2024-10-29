@@ -3,6 +3,7 @@ package api
 import (
 	"calometer/internal/lib"
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 )
@@ -17,18 +18,23 @@ const UserIdContextKey contextUserId = "userId"
 
 func AuthMiddleWare(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := Response{}
+		resp.Code = make(map[int]string)
+
 		// Check for JWT in the request
 		tokenStr := lib.ExtractTokenFromHeader(r)
 		if tokenStr == "" {
 			// No token found in the request header
-			http.Error(w, "User not authenticated. Please provide a valid token.", http.StatusUnauthorized)
+			resp.Code[http.StatusUnauthorized] = "Session expired. Please login again."
+			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 
 		// Validate the JWT
 		if err := lib.ValidateToken(tokenStr); err != nil {
 			// Token is invalid
-			http.Error(w, "Invalid token. Please authenticate again.", http.StatusUnauthorized)
+			resp.Code[http.StatusUnauthorized] = "Invalid token. Please login again."
+			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 

@@ -1,32 +1,27 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { http_post, isRespDataWithHttpInfo } from "./lib/http";
-import Spinner from "./components/Spinner";
 import { toast } from "react-toastify";
-import "./Signup.css";
+import Spinner from "./components/Spinner";
+import "./Login.css";
 
 interface ValidationErrors {
-  fullName?: string;
   username?: string;
   password?: string;
-  confirmPassword?: string;
 }
 
-function Signup() {
+function Login() {
   const apiUrl = process.env.REACT_APP_API_URL;
-  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    fullName: "",
     username: "",
     password: "",
-    confirmPassword: "",
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
+  const [apiCallErrMsg, setApiCallErrMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -38,13 +33,6 @@ function Signup() {
 
   const validateField = (name: string, value: string): string | undefined => {
     switch (name) {
-      case "fullName":
-        if (!value.trim()) {
-          return "Full name is required";
-        } else if (!/^[A-Za-z\s]+$/.test(value)) {
-          return "Full name must contain only letters";
-        }
-        break;
       case "username":
         if (!value.trim()) {
           return "Username is required";
@@ -55,13 +43,6 @@ function Signup() {
           return "Password is required";
         } else if (value.length < 6) {
           return "Password must be at least 6 characters";
-        }
-        break;
-      case "confirmPassword":
-        if (!value.trim()) {
-          return "Confirm password is required";
-        } else if (value !== formData.password) {
-          return "Passwords do not match";
         }
         break;
       default:
@@ -76,12 +57,6 @@ function Signup() {
 
     const validationErrors: ValidationErrors = {};
 
-    if (!formData.fullName.trim()) {
-      validationErrors.fullName = "Full name is required";
-    } else if (!/^[A-Za-z\s]+$/.test(formData.fullName)) {
-      validationErrors.fullName = "Full name must contain only letters";
-    }
-
     if (!formData.username.trim()) {
       validationErrors.username = "Username is required";
     }
@@ -92,65 +67,46 @@ function Signup() {
       validationErrors.password = "Password must be at least 6 characters";
     }
 
-    if (!formData.confirmPassword.trim()) {
-      validationErrors.confirmPassword = "Confirm password is required";
-    } else if (formData.password !== formData.confirmPassword) {
-      validationErrors.confirmPassword = "Passwords do not match";
-    }
-
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length === 0) {
       setLoading(true);
+      setApiCallErrMsg("");
       console.log("Form submitted", formData);
       const body = {
-        name: formData.fullName,
         username: formData.username,
         password: formData.password,
       };
 
       try {
-        const resp = await http_post(`${apiUrl}/api/users/signup`, body);
+        const resp = await http_post(`${apiUrl}/api/users/login`, body);
         setLoading(false);
         if (isRespDataWithHttpInfo(resp)) {
           const respCodeStr = Object.keys(resp.code)[0];
-          const respCode: number = +respCodeStr
+          const respCode: number = +respCodeStr;
           if (respCode === 409) {
-            toast.error(resp.code[respCode]);
             setErrors({ ...errors, ["username"]: resp.code[respCode] });
           } else if (respCode === 200) {
-            toast.success("Signed up successfully. Please log in");
-            navigate("/login");
+            toast.success("Login successful")
           } else {
             toast.error(resp.code[respCode]);
           }
         }
       } catch (e) {
         setLoading(false);
-        toast.error("Something went wrong. Please try again.");
+        console.log(e);
+        setApiCallErrMsg("Something went wrong, please try again");
       }
     }
   };
 
   return (
     <div className="main">
-      <h1>SIGNUP</h1>
+      <h1>SIGNIN</h1>
 
       <div className="parentDiv">
         <div className="formDiv">
           <form onSubmit={handleSubmit}>
-            <div className="inputDiv">
-              <p>Full Name</p>
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                placeholder="Enter your fullname"
-                onChange={handleChange}
-              />
-              {errors.fullName && <p className="error">{errors.fullName}</p>}
-            </div>
-
             <div className="inputDiv">
               <p>Username</p>
               <input
@@ -187,52 +143,29 @@ function Signup() {
               {errors.password && <p className="error">{errors.password}</p>}
             </div>
 
-            <div className="inputDiv">
-              <p>Confirm Password</p>
-              <div className="passwordContainer">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  placeholder="Enter the password again"
-                  onChange={handleChange}
-                />
-                <div
-                  className="showPasswordDiv"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <img src="/assets/eye.svg" alt="eye" />
-                  ) : (
-                    <img src="/assets/eye-off.svg" alt="eye-off" />
-                  )}
-                </div>
-              </div>
-              {errors.confirmPassword && (
-                <p className="error">{errors.confirmPassword}</p>
-              )}
-            </div>
-
-            <div className="registerBtn">
+            <div className="loginBtn">
               <button type="submit" disabled={loading}>
-                {loading ? <Spinner /> : "Register"}
+                {loading ? <Spinner /> : "Login"}
               </button>
             </div>
+            {apiCallErrMsg && (
+              <p className="error apiErrorMsg">{apiCallErrMsg}</p>
+            )}
           </form>
 
-          <p className="loginPrompt">
-            Already have an account?{" "}
+          <p className="signupPrompt">
+            Don't have an account?{" "}
             <span>
-              <Link to="/login">Login here</Link>
+              <Link to="/signup">Sign up here</Link>
             </span>
           </p>
         </div>
         <div className="imgDiv">
-          <img src="/assets/healthy_habit.svg" alt="healthy habit" />
+          <img src="/assets/login_illustration.svg" alt="login illustration" />
         </div>
       </div>
     </div>
   );
 }
 
-export default Signup;
+export default Login;
