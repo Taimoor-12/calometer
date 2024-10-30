@@ -23,20 +23,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	resp := Response{}
 	resp.Code = make(map[int]string)
 
-	// // Step 1: Check for JWT in the request
-	// tokenStr := lib.ExtractTokenFromHeader(r)
-	// if tokenStr != "" {
-	// 	// Step 2: Validate the JWT
-	// 	if err := lib.ValidateToken(tokenStr); err == nil {
-	// 		// Token is valid, return a success response
-	// 		w.WriteHeader(http.StatusOK)
-	// 		resp.Code[http.StatusOK] = "OK"
-	// 		resp.Data = map[string]string{"token": tokenStr}
-	// 		json.NewEncoder(w).Encode(&resp)
-	// 		return
-	// 	}
-	// }
-
 	cookie, err := r.Cookie("token")
 	if err == nil {
 		// Validate the JWT
