@@ -26,6 +26,18 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	resp := Response{}
 	resp.Code = make(map[int]string)
 
+	cookie, err := r.Cookie("token")
+	if err == nil {
+		// Validate the JWT
+		if err := lib.ValidateToken(cookie.Value); err == nil {
+			// Token is valid, return a success response
+			w.WriteHeader(http.StatusOK)
+			resp.Code[http.StatusOK] = "Logged in successfully."
+			json.NewEncoder(w).Encode(&resp)
+			return
+		}
+	}
+
 	var user SignupHandlerReq
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 		log.Info("failed to decode incoming json")

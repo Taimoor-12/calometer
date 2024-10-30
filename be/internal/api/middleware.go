@@ -21,24 +21,24 @@ func AuthMiddleWare(next http.Handler) http.Handler {
 		resp := Response{}
 		resp.Code = make(map[int]string)
 
-		// Check for JWT in the request
-		tokenStr := lib.ExtractTokenFromHeader(r)
-		if tokenStr == "" {
-			// No token found in the request header
+		// Extract the token from the cookie
+		cookie, err := r.Cookie("token")
+		if err != nil {
+			// No cookie found
 			resp.Code[http.StatusUnauthorized] = "Session expired. Please login again."
 			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 
 		// Validate the JWT
-		if err := lib.ValidateToken(tokenStr); err != nil {
+		if err := lib.ValidateToken(cookie.Value); err != nil {
 			// Token is invalid
 			resp.Code[http.StatusUnauthorized] = "Invalid token. Please login again."
 			json.NewEncoder(w).Encode(&resp)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), TokenContextKey, tokenStr)
+		ctx := context.WithValue(r.Context(), TokenContextKey, cookie.Value)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
@@ -52,7 +52,6 @@ func EnableCORS(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
-		// Pass to the next handler
 		next.ServeHTTP(w, r)
 	})
 }

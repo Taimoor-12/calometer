@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { http_post, isRespDataWithHttpInfo } from "./lib/http";
 import { toast } from "react-toastify";
@@ -87,7 +87,7 @@ function Login() {
           if (respCode === 409) {
             setErrors({ ...errors, ["username"]: resp.code[respCode] });
           } else if (respCode === 200) {
-            toast.success("Login successful")
+            toast.success("Login successful");
           } else {
             toast.error(resp.code[respCode]);
           }
@@ -99,6 +99,22 @@ function Login() {
       }
     }
   };
+
+  useEffect(() => {
+    const loginUser = async () => {
+      const resp = await http_post(`${apiUrl}/api/users/login`, {});
+      if (isRespDataWithHttpInfo(resp)) {
+        const respCodeStr = Object.keys(resp.code)[0];
+        const respCode = +respCodeStr; // Convert string to number
+        if (respCode === 200) {
+          toast.success("Login successful"); //remove this later
+          // navigate to dashboard/home.
+        }
+      }
+    };
+
+    loginUser();
+  }, []);
 
   return (
     <div className="main">
