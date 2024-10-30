@@ -85,7 +85,7 @@ function Login() {
           const respCodeStr = Object.keys(resp.code)[0];
           const respCode: number = +respCodeStr;
           if (respCode === 409) {
-            setErrors({ ...errors, ["username"]: resp.code[respCode] });
+            setErrors({ ...errors, username: resp.code[respCode] });
           } else if (respCode === 200) {
             toast.success("Login successful");
           } else {
@@ -102,19 +102,25 @@ function Login() {
 
   useEffect(() => {
     const loginUser = async () => {
-      const resp = await http_post(`${apiUrl}/api/users/login`, {});
-      if (isRespDataWithHttpInfo(resp)) {
-        const respCodeStr = Object.keys(resp.code)[0];
-        const respCode = +respCodeStr; // Convert string to number
-        if (respCode === 200) {
-          toast.success("Login successful"); //remove this later
-          // navigate to dashboard/home.
+      try {
+        const resp = await http_post(`${apiUrl}/api/users/login`, {});
+        if (isRespDataWithHttpInfo(resp)) {
+          const respCodeStr = Object.keys(resp.code)[0];
+          const respCode = +respCodeStr; // Convert string to number
+          if (respCode === 200) {
+            toast.success("Login successful"); // remove this later
+            // navigate to dashboard/home.
+          }
         }
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error("Something went wrong, please try again.");
       }
     };
 
     loginUser();
-  }, []);
+  }, [apiUrl]);
+
 
   return (
     <div className="main">
