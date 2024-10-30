@@ -117,7 +117,7 @@ function Signup() {
           const respCode: number = +respCodeStr
           if (respCode === 409) {
             toast.error(resp.code[respCode]);
-            setErrors({ ...errors, ["username"]: resp.code[respCode] });
+            setErrors({ ...errors, username: resp.code[respCode] });
           } else if (respCode === 200) {
             toast.success("Signed up successfully. Please log in");
             navigate("/login");
@@ -134,19 +134,25 @@ function Signup() {
 
   useEffect(() => {
     const signupUser = async () => {
-      const resp = await http_post(`${apiUrl}/api/users/signup`, {});
-      if (isRespDataWithHttpInfo(resp)) {
-        const respCodeStr = Object.keys(resp.code)[0];
-        const respCode = +respCodeStr; // Convert string to number
-        if (respCode === 200) {
-          toast.success("Login successful"); //remove this later
-          // navigate to dashboard/home.
+      try {
+        const resp = await http_post(`${apiUrl}/api/users/signup`, {});
+        if (isRespDataWithHttpInfo(resp)) {
+          const respCodeStr = Object.keys(resp.code)[0];
+          const respCode = +respCodeStr; // Convert string to number
+          if (respCode === 200) {
+            toast.success("Login successful"); // remove this later
+            // navigate to dashboard/home.
+          }
         }
+      } catch (error) {
+        console.error("Signup failed:", error);
+        toast.error("Something went wrong, please try again.");
       }
     };
 
     signupUser();
-  }, []);
+  }, [apiUrl]);
+
 
   return (
     <div className="main">
