@@ -1,6 +1,7 @@
 .main {
   margin-top: 200px;
   margin-left: 140px;
+  margin-right: 140px;
 }
 
 .main h1 {
@@ -13,6 +14,7 @@
   font-family: "Inter", sans-serif;
   font-size: 18px;
   display: flex;
+  justify-content: space-between;
 }
 
 .inputDiv {
@@ -62,7 +64,6 @@ input {
 .imgDiv {
   width: 567px;
   height: 413px;
-  margin-left: 327px;
 }
 
 .error {
