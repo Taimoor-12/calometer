@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { http_post, isRespDataWithHttpInfo } from "./lib/http";
 import { toast } from "react-toastify";
 import Spinner from "./components/Spinner";
-import "./Login.css";
+import s from "./Login.module.css";
 
 interface ValidationErrors {
   username?: string;
@@ -123,13 +123,13 @@ function Login() {
 
 
   return (
-    <div className="main">
+    <div className={s.main}>
       <h1>SIGNIN</h1>
 
-      <div className="parentDiv">
-        <div className="formDiv">
+      <div className={s.parentDiv}>
+        <div className={s.formDiv}>
           <form onSubmit={handleSubmit}>
-            <div className="inputDiv">
+            <div className={s.inputDiv}>
               <p>Username</p>
               <input
                 type="text"
@@ -138,12 +138,12 @@ function Login() {
                 placeholder="Enter your username"
                 onChange={handleChange}
               />
-              {errors.username && <p className="error">{errors.username}</p>}
+              {errors.username && <p className={s.error}>{errors.username}</p>}
             </div>
 
-            <div className="inputDiv">
+            <div className={s.inputDiv}>
               <p>Password</p>
-              <div className="passwordContainer">
+              <div className={s.passwordContainer}>
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
@@ -152,7 +152,7 @@ function Login() {
                   onChange={handleChange}
                 />
                 <div
-                  className="showPasswordDiv"
+                  className={s.showPasswordDiv}
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -162,27 +162,24 @@ function Login() {
                   )}
                 </div>
               </div>
-              {errors.password && <p className="error">{errors.password}</p>}
+              {errors.password && <p className={s.error}>{errors.password}</p>}
             </div>
 
-            <div className="loginBtn">
+            <div className={s.loginBtn}>
               <button type="submit" disabled={loading}>
                 {loading ? <Spinner /> : "Login"}
               </button>
             </div>
-            {apiCallErrMsg && (
-              <p className="error apiErrorMsg">{apiCallErrMsg}</p>
-            )}
           </form>
 
-          <p className="signupPrompt">
+          <p className={s.signupPrompt}>
             Don't have an account?{" "}
             <span>
               <Link to="/signup">Sign up here</Link>
             </span>
           </p>
         </div>
-        <div className="imgDiv">
+        <div className={s.imgDiv}>
           <img src="/assets/login_illustration.svg" alt="login illustration" />
         </div>
       </div>
