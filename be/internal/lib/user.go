@@ -143,3 +143,21 @@ func GetUserWeightGoalById(userId uuid.UUID) (*string, error) {
 
 	return &goal, nil
 }
+
+func DoesBodyDetailsExist(userId uuid.UUID) (*bool, error) {
+	var exists bool
+
+	qStr := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM user_body_details
+			WHERE u_id = $1
+		) AS exists
+	`
+
+	if err := db.GetPool().QueryRow(context.Background(), qStr, userId).Scan(&exists); err != nil {
+		return nil, err
+	}
+
+	return &exists, nil
+}
