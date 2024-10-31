@@ -76,6 +76,18 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := lib.SetUserGoal(*userId, req.Goal); err != nil {
+		log.Info(
+			"failed to set user weight goal by id",
+			zap.String("userId", userId.String()),
+			zap.Error(err),
+		)
+
+		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
+		json.NewEncoder(w).Encode(&resp)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	resp.Code[http.StatusOK] = "OK"
 	json.NewEncoder(w).Encode(&resp)
