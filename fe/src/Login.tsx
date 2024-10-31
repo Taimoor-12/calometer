@@ -20,7 +20,6 @@ function Login() {
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
-  const [apiCallErrMsg, setApiCallErrMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +70,6 @@ function Login() {
 
     if (Object.keys(validationErrors).length === 0) {
       setLoading(true);
-      setApiCallErrMsg("");
       console.log("Form submitted", formData);
       const body = {
         username: formData.username,
@@ -95,7 +93,7 @@ function Login() {
       } catch (e) {
         setLoading(false);
         console.log(e);
-        setApiCallErrMsg("Something went wrong, please try again");
+        toast.error("Something went wrong, please try again");
       }
     }
   };
