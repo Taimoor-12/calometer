@@ -19,7 +19,7 @@ func SetupRouter() *mux.Router {
 	router.Handle("/api/users/login", enableCORSMiddleware.Then(http.HandlerFunc(LoginHandler))).Methods(http.MethodPost)
 
 	router.Handle("/api/users/body_details/add", authMiddleware.Then(http.HandlerFunc(AddBodyDetailsHandler))).Methods(http.MethodPost)
-	router.Handle("/api/users/body_details/exists", authMiddleware.Then(http.HandlerFunc(DoBodyDetailsExistHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/body_details/exists", authMiddleware.Then(http.HandlerFunc(DoBodyDetailsExistHandler))).Methods(http.MethodGet)
 	router.Handle("/api/users/weight_goal/set", authMiddleware.Then(http.HandlerFunc(SetUserWeightGoalHandler))).Methods(http.MethodPost)
 
 	router.Handle("/api/users/log/create", authMiddleware.Then(http.HandlerFunc(CreateCalorieLogHandler))).Methods(http.MethodPost)
