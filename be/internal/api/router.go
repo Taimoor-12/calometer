@@ -17,6 +17,7 @@ func SetupRouter() *mux.Router {
 	// Define routes
 	router.Handle("/api/users/signup", enableCORSMiddleware.Then(http.HandlerFunc(SignUpHandler))).Methods(http.MethodPost)
 	router.Handle("/api/users/login", enableCORSMiddleware.Then(http.HandlerFunc(LoginHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/logout", enableCORSMiddleware.Then(http.HandlerFunc(LogoutHandler))).Methods(http.MethodPost)
 
 	router.Handle("/api/users/body_details/add", authMiddleware.Then(http.HandlerFunc(AddBodyDetailsHandler))).Methods(http.MethodPost)
 	router.Handle("/api/users/body_details/exists", authMiddleware.Then(http.HandlerFunc(DoBodyDetailsExistHandler))).Methods(http.MethodGet)
