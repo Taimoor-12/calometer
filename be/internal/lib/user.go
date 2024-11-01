@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 func DoesUserExists(username string) (*bool, error) {
@@ -24,7 +25,7 @@ func DoesUserExists(username string) (*bool, error) {
 }
 
 func GetUserIdByUsername(username string) (*uuid.UUID, error) {
-	var userId uuid.UUID
+	var userId *uuid.UUID
 
 	qStr := `
 		SELECT id
@@ -32,10 +33,14 @@ func GetUserIdByUsername(username string) (*uuid.UUID, error) {
 		WHERE username = $1`
 
 	if err := db.GetPool().QueryRow(context.Background(), qStr, username).Scan(&userId); err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
-	return &userId, nil
+	return userId, nil
 }
 
 func AddUserBodyDetails(userId uuid.UUID, age int, height_cm int, weight_kg float64, gender string) error {
