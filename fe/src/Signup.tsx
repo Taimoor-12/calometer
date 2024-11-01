@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { http_post, isRespDataWithHttpInfo } from "./lib/http";
+import { http_post } from "./lib/http";
 import Spinner from "./components/Spinner";
 import { toast } from "react-toastify";
 import s from "./Signup.module.css";
@@ -111,23 +111,19 @@ function Signup() {
 
       try {
         const resp = await http_post(`${apiUrl}/api/users/signup`, body);
-        setLoading(false);
-        if (isRespDataWithHttpInfo(resp)) {
-          const respCodeStr = Object.keys(resp.code)[0];
-          const respCode: number = +respCodeStr
-          if (respCode === 409) {
-            toast.error(resp.code[respCode]);
-            setErrors({ ...errors, username: resp.code[respCode] });
-          } else if (respCode === 200) {
-            toast.success("Signed up successfully. Please log in");
-            navigate("/login");
-          } else {
-            toast.error(resp.code[respCode]);
-          }
+        console.log(resp);
+        const respCode = +Object.keys(resp.code)[0];
+        if (respCode === 200) {
+          navigate("/login");
+          toast.success("Signed up successfully. Please log in.");
+        } else {
+          toast.error(resp.code[respCode]);
         }
-      } catch (e) {
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error("Something went wrong, please try again.");
+      } finally {
         setLoading(false);
-        toast.error("Something went wrong. Please try again.");
       }
     }
   };
@@ -136,13 +132,10 @@ function Signup() {
     const signupUser = async () => {
       try {
         const resp = await http_post(`${apiUrl}/api/users/signup`, {});
-        if (isRespDataWithHttpInfo(resp)) {
-          const respCodeStr = Object.keys(resp.code)[0];
-          const respCode = +respCodeStr; // Convert string to number
-          if (respCode === 200) {
-            toast.success("Login successful"); // remove this later
-            // navigate to dashboard/home.
-          }
+        console.log(resp);
+        const respCode = +Object.keys(resp.code)[0];
+        if (respCode === 200) {
+          navigate("/login");
         }
       } catch (error) {
         console.error("Signup failed:", error);
@@ -152,7 +145,6 @@ function Signup() {
 
     signupUser();
   }, [apiUrl]);
-
 
   return (
     <div className={s.main}>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { http_post, isRespDataWithHttpInfo } from "./lib/http";
+import { Link, useNavigate } from "react-router-dom";
+import { http_get, http_post } from "./lib/http";
 import { toast } from "react-toastify";
 import Spinner from "./components/Spinner";
 import s from "./Login.module.css";
@@ -12,6 +12,7 @@ interface ValidationErrors {
 
 function Login() {
   const apiUrl = process.env.REACT_APP_API_URL;
+  const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
     username: "",
@@ -78,37 +79,44 @@ function Login() {
 
       try {
         const resp = await http_post(`${apiUrl}/api/users/login`, body);
-        setLoading(false);
-        if (isRespDataWithHttpInfo(resp)) {
-          const respCodeStr = Object.keys(resp.code)[0];
-          const respCode: number = +respCodeStr;
-          if (respCode === 409) {
-            setErrors({ ...errors, username: resp.code[respCode] });
-          } else if (respCode === 200) {
-            toast.success("Login successful");
-          } else {
-            toast.error(resp.code[respCode]);
-          }
+        console.log(resp)
+        const respCode = +Object.keys(resp.code)[0]
+        if (respCode === 200) {
+          const doBodyDetailsExist = await doBodyDetailsExistCall()
+          navigate(doBodyDetailsExist ? "/signup" : "/addBodyDetails");
+          toast.success(resp.code[respCode])
+        } else {
+          toast.error(resp.code[respCode])
         }
-      } catch (e) {
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error("Something went wrong, please try again.");
+      } finally {
         setLoading(false);
-        console.log(e);
-        toast.error("Something went wrong, please try again");
       }
     }
   };
+
+  const doBodyDetailsExistCall = async (): Promise<boolean> => {
+    const resp = await http_get(`${apiUrl}/api/users/body_details/exists`)
+    console.log(resp)
+    const respCode = +Object.keys(resp.code)[0]
+    if (respCode === 200) {
+      const exists: boolean = resp.data['exists']
+      return exists
+    }
+
+    return false
+  }
 
   useEffect(() => {
     const loginUser = async () => {
       try {
         const resp = await http_post(`${apiUrl}/api/users/login`, {});
-        if (isRespDataWithHttpInfo(resp)) {
-          const respCodeStr = Object.keys(resp.code)[0];
-          const respCode = +respCodeStr; // Convert string to number
-          if (respCode === 200) {
-            toast.success("Login successful"); // remove this later
-            // navigate to dashboard/home.
-          }
+        const respCode = +Object.keys(resp.code)[0]
+        if (respCode === 200) {
+          const doBodyDetailsExist = await doBodyDetailsExistCall()
+          navigate(doBodyDetailsExist ? "/signup" : "/addBodyDetails");
         }
       } catch (error) {
         console.error("Login failed:", error);
@@ -118,7 +126,6 @@ function Login() {
 
     loginUser();
   }, [apiUrl]);
-
 
   return (
     <div className={s.main}>
