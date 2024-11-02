@@ -9,21 +9,25 @@ const AddBodyDetails = () => {
   const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    age: 0,
-    weight: 0.0,
-    height: 0,
-    gender: "",
-    goal: "",
-  });
-
   const [loadingConfirm, setLoadingConfirm] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
   const [selectedGenderOption, setSelectedGenderOption] = useState("M");
   const [selectedGoalOption, setSelectedGoalOption] = useState("L");
+  const [formData, setFormData] = useState({
+    age: 0,
+    weight: 0.0,
+    height: 0,
+    gender: selectedGenderOption,
+    goal: selectedGoalOption,
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+
+    let parsedValue: string | number = value;
+    if (name === "age" || name === "weight" || name === "height") {
+      parsedValue = parseFloat(value);
+    }
 
     if (name === "gender") {
       setSelectedGenderOption(value);
@@ -31,14 +35,32 @@ const AddBodyDetails = () => {
       setSelectedGoalOption(value);
     }
 
-    setFormData({ ...formData, [name]: value });
-    console.log(name, value);
+    setFormData({ ...formData, [name]: parsedValue });
+    console.log(name, parsedValue);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitted", formData);
+    setFormData( {...formData, gender: selectedGenderOption, goal: selectedGoalOption})
+    setLoadingConfirm(true);
+    console.log("submitted", formData)
+    await addBodyDetailsCall();
   };
+
+  const addBodyDetailsCall = async () => {
+    try {
+      const resp = await http_post(`${apiUrl}/api/users/body_details/add`, formData)
+      const respCode = +Object.keys(resp.code)[0]
+      if (respCode === 200) {
+        toast.success("Successfully added body details.")
+        navigate("/dashboard")
+      }
+    } catch (e) {
+      toast.error("Something went wrong, please try again.")
+    } finally {
+      setLoadingConfirm(false);
+    }
+  }
 
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
