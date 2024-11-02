@@ -116,7 +116,7 @@ function Login() {
         const respCode = +Object.keys(resp.code)[0]
         if (respCode === 200) {
           const doBodyDetailsExist = await doBodyDetailsExistCall()
-          navigate(doBodyDetailsExist ? "/signup" : "/addBodyDetails");
+          navigate(doBodyDetailsExist ? "/dashboard" : "/addBodyDetails");
         }
       } catch (error) {
         console.error("Login failed:", error);
