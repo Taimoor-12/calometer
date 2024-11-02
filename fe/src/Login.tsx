@@ -83,7 +83,7 @@ function Login() {
         const respCode = +Object.keys(resp.code)[0]
         if (respCode === 200) {
           const doBodyDetailsExist = await doBodyDetailsExistCall()
-          navigate(doBodyDetailsExist ? "/signup" : "/addBodyDetails");
+          navigate(doBodyDetailsExist ? "/dashboard" : "/addBodyDetails");
           toast.success(resp.code[respCode])
         } else {
           toast.error(resp.code[respCode])
