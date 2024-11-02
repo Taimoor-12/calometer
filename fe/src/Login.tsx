@@ -12,7 +12,7 @@ interface ValidationErrors {
 
 function Login() {
   const apiUrl = process.env.REACT_APP_API_URL;
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -79,14 +79,16 @@ function Login() {
 
       try {
         const resp = await http_post(`${apiUrl}/api/users/login`, body);
-        console.log(resp)
-        const respCode = +Object.keys(resp.code)[0]
+        console.log(resp);
+        const respCode = +Object.keys(resp.code)[0];
         if (respCode === 200) {
-          const doBodyDetailsExist = await doBodyDetailsExistCall()
-          navigate(doBodyDetailsExist ? "/dashboard" : "/addBodyDetails");
-          toast.success(resp.code[respCode])
+          const doBodyDetailsExist = await doBodyDetailsExistCall();
+          navigate(doBodyDetailsExist ? "/dashboard" : "/addBodyDetails", {
+            state: { from: "login" },
+          });
+          toast.success(resp.code[respCode]);
         } else {
-          toast.error(resp.code[respCode])
+          toast.error(resp.code[respCode]);
         }
       } catch (error) {
         console.error("Login failed:", error);
@@ -98,25 +100,27 @@ function Login() {
   };
 
   const doBodyDetailsExistCall = async (): Promise<boolean> => {
-    const resp = await http_get(`${apiUrl}/api/users/body_details/exists`)
-    console.log(resp)
-    const respCode = +Object.keys(resp.code)[0]
+    const resp = await http_get(`${apiUrl}/api/users/body_details/exists`);
+    console.log(resp);
+    const respCode = +Object.keys(resp.code)[0];
     if (respCode === 200) {
-      const exists: boolean = resp.data['exists']
-      return exists
+      const exists: boolean = resp.data["exists"];
+      return exists;
     }
 
-    return false
-  }
+    return false;
+  };
 
   useEffect(() => {
     const loginUser = async () => {
       try {
         const resp = await http_post(`${apiUrl}/api/users/login`, {});
-        const respCode = +Object.keys(resp.code)[0]
+        const respCode = +Object.keys(resp.code)[0];
         if (respCode === 200) {
-          const doBodyDetailsExist = await doBodyDetailsExistCall()
-          navigate(doBodyDetailsExist ? "/dashboard" : "/addBodyDetails");
+          const doBodyDetailsExist = await doBodyDetailsExistCall();
+          navigate(doBodyDetailsExist ? "/dashboard" : "/addBodyDetails", {
+            state: { from: "login" },
+          });
         }
       } catch (error) {
         console.error("Login failed:", error);

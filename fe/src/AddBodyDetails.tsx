@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Spinner from "./components/Spinner";
 import { toast } from "react-toastify";
 import s from "./AddBodyDetails.module.css";
-import { http_post } from "./lib/http";
+import { http_post, http_get } from "./lib/http";
 
 const AddBodyDetails = () => {
   const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [loadingConfirm, setLoadingConfirm] = useState(false);
   const [loadingLogout, setLoadingLogout] = useState(false);
@@ -41,43 +42,74 @@ const AddBodyDetails = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormData( {...formData, gender: selectedGenderOption, goal: selectedGoalOption})
+    setFormData({
+      ...formData,
+      gender: selectedGenderOption,
+      goal: selectedGoalOption,
+    });
     setLoadingConfirm(true);
-    console.log("submitted", formData)
+    console.log("submitted", formData);
     await addBodyDetailsCall();
   };
 
   const addBodyDetailsCall = async () => {
     try {
-      const resp = await http_post(`${apiUrl}/api/users/body_details/add`, formData)
-      const respCode = +Object.keys(resp.code)[0]
+      const resp = await http_post(
+        `${apiUrl}/api/users/body_details/add`,
+        formData
+      );
+      const respCode = +Object.keys(resp.code)[0];
       if (respCode === 200) {
-        toast.success("Successfully added body details.")
-        navigate("/dashboard")
+        toast.success("Successfully added body details.");
+        navigate("/dashboard");
       }
     } catch (e) {
-      toast.error("Something went wrong, please try again.")
+      toast.error("Something went wrong, please try again.");
     } finally {
       setLoadingConfirm(false);
     }
-  }
+  };
 
   const handleLogout = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault()
-    setLoadingLogout(true)
+    e.preventDefault();
+    setLoadingLogout(true);
     try {
-      const resp = await http_post(`${apiUrl}/api/users/logout`, {})
-      const respCode = +Object.keys(resp.code)[0]
+      const resp = await http_post(`${apiUrl}/api/users/logout`, {});
+      const respCode = +Object.keys(resp.code)[0];
       if (respCode === 200) {
-        navigate("/login")
-        toast.success("Logged out successfully")
+        navigate("/login");
+        toast.success("Logged out successfully");
       }
     } catch (e) {
-      toast.error("Something went wrong, please try again.")
+      toast.error("Something went wrong, please try again.");
     } finally {
       setLoadingLogout(false);
     }
-  }
+  };
+
+  const doBodyDetailsExistCall = async () => {
+    const resp = await http_get(`${apiUrl}/api/users/body_details/exists`);
+    console.log(resp);
+    const respCode = +Object.keys(resp.code)[0];
+    if (respCode === 200) {
+      navigate("/dashboard")
+    } else if (respCode == 401) {
+      navigate("/login")
+    }
+  };
+
+  useEffect(() => {
+    if (location.state?.from === "login") {
+      return;
+    }
+
+    const doBodyDetailsExist = async () => {
+      await doBodyDetailsExistCall();
+    };
+
+    doBodyDetailsExist();
+  }, [apiUrl, location.state]);
+
   return (
     <div className={s.main}>
       <h1>BODY DETAILS</h1>
