@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { http_get, http_post } from "./lib/http";
 import { toast } from "react-toastify";
@@ -99,7 +99,7 @@ function Login() {
     }
   };
 
-  const doBodyDetailsExistCall = async (): Promise<boolean> => {
+  const doBodyDetailsExistCall = useCallback(async (): Promise<boolean> => {
     const resp = await http_get(`${apiUrl}/api/users/body_details/exists`);
     console.log(resp);
     const respCode = +Object.keys(resp.code)[0];
@@ -109,7 +109,7 @@ function Login() {
     }
 
     return false;
-  };
+  }, [apiUrl]);
 
   useEffect(() => {
     const loginUser = async () => {
@@ -129,7 +129,7 @@ function Login() {
     };
 
     loginUser();
-  }, [apiUrl]);
+  }, [apiUrl, navigate, doBodyDetailsExistCall]);
 
   return (
     <div className={s.main}>

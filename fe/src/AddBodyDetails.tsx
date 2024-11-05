@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Spinner from "./components/Spinner";
 import { toast } from "react-toastify";
@@ -87,16 +87,16 @@ const AddBodyDetails = () => {
     }
   };
 
-  const doBodyDetailsExistCall = async () => {
+  const doBodyDetailsExistCall = useCallback(async () => {
     const resp = await http_get(`${apiUrl}/api/users/body_details/exists`);
     console.log(resp);
     const respCode = +Object.keys(resp.code)[0];
     if (respCode === 200) {
       navigate("/dashboard")
-    } else if (respCode == 401) {
+    } else if (respCode === 401) {
       navigate("/login")
     }
-  };
+  }, [apiUrl, navigate]);
 
   useEffect(() => {
     if (location.state?.from === "login") {
@@ -108,7 +108,7 @@ const AddBodyDetails = () => {
     };
 
     doBodyDetailsExist();
-  }, [apiUrl, location.state]);
+  }, [location.state, doBodyDetailsExistCall]);
 
   return (
     <div className={s.main}>
