@@ -1,6 +1,7 @@
 .main {
   margin-top: 200px;
   margin-left: 140px;
+  margin-right: 140px;
 }
 
 .main h1 {
@@ -13,6 +14,7 @@
   font-family: "Inter", sans-serif;
   font-size: 18px;
   display: flex;
+  justify-content: space-between;
 }
 
 .inputDiv {
@@ -29,11 +31,11 @@ input {
   padding-left: 12px;
 }
 
-.registerBtn {
+.loginBtn {
   margin-top: 60px;
 }
 
-.registerBtn button {
+.loginBtn button {
   width: 169px;
   height: 54px;
   background-color: #2196F3;
@@ -48,21 +50,20 @@ input {
   margin-right: 25%;
 }
 
-.loginPrompt {
+.signupPrompt {
   margin-top: 60px;
   margin-left: 26px;
 }
 
-.loginPrompt a {
+.signupPrompt a {
   text-decoration: none;
   font-weight: 700;
   color: #666;
 }
 
 .imgDiv {
-  width: 466px;
-  height: 471px;
-  margin-left: 327px;
+  width: 567px;
+  height: 413px;
 }
 
 .error {

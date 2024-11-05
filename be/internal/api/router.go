@@ -17,9 +17,11 @@ func SetupRouter() *mux.Router {
 	// Define routes
 	router.Handle("/api/users/signup", enableCORSMiddleware.Then(http.HandlerFunc(SignUpHandler))).Methods(http.MethodPost)
 	router.Handle("/api/users/login", enableCORSMiddleware.Then(http.HandlerFunc(LoginHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/logout", enableCORSMiddleware.Then(http.HandlerFunc(LogoutHandler))).Methods(http.MethodPost)
 
-	router.Handle("/api/users/add_body_details", authMiddleware.Then(http.HandlerFunc(AddBodyDetailsHandler))).Methods(http.MethodPost)
-	router.Handle("/api/users/set_weight_goal", authMiddleware.Then(http.HandlerFunc(SetUserWeightGoalHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/body_details/add", authMiddleware.Then(http.HandlerFunc(AddBodyDetailsHandler))).Methods(http.MethodPost)
+	router.Handle("/api/users/body_details/exists", authMiddleware.Then(http.HandlerFunc(DoBodyDetailsExistHandler))).Methods(http.MethodGet)
+	router.Handle("/api/users/weight_goal/set", authMiddleware.Then(http.HandlerFunc(SetUserWeightGoalHandler))).Methods(http.MethodPost)
 
 	router.Handle("/api/users/log/create", authMiddleware.Then(http.HandlerFunc(CreateCalorieLogHandler))).Methods(http.MethodPost)
 	router.Handle("/api/users/log/get", authMiddleware.Then(http.HandlerFunc(GetCalorieLogsHandler))).Methods(http.MethodGet)

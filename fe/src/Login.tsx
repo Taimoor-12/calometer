@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { http_post, isRespDataWithHttpInfo } from "./lib/http";
+import { Link, useNavigate } from "react-router-dom";
+import { http_get, http_post } from "./lib/http";
 import { toast } from "react-toastify";
 import Spinner from "./components/Spinner";
-import "./Login.css";
+import s from "./Login.module.css";
 
 interface ValidationErrors {
   username?: string;
@@ -12,6 +12,7 @@ interface ValidationErrors {
 
 function Login() {
   const apiUrl = process.env.REACT_APP_API_URL;
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -20,7 +21,6 @@ function Login() {
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [loading, setLoading] = useState(false);
-  const [apiCallErrMsg, setApiCallErrMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,7 +71,6 @@ function Login() {
 
     if (Object.keys(validationErrors).length === 0) {
       setLoading(true);
-      setApiCallErrMsg("");
       console.log("Form submitted", formData);
       const body = {
         username: formData.username,
@@ -80,50 +79,66 @@ function Login() {
 
       try {
         const resp = await http_post(`${apiUrl}/api/users/login`, body);
-        setLoading(false);
-        if (isRespDataWithHttpInfo(resp)) {
-          const respCodeStr = Object.keys(resp.code)[0];
-          const respCode: number = +respCodeStr;
-          if (respCode === 409) {
-            setErrors({ ...errors, ["username"]: resp.code[respCode] });
-          } else if (respCode === 200) {
-            toast.success("Login successful");
-          } else {
-            toast.error(resp.code[respCode]);
-          }
+        console.log(resp);
+        const respCode = +Object.keys(resp.code)[0];
+        if (respCode === 200) {
+          const doBodyDetailsExist = await doBodyDetailsExistCall();
+          navigate(doBodyDetailsExist ? "/dashboard" : "/addBodyDetails", {
+            state: { from: "login" },
+          });
+          toast.success(resp.code[respCode]);
+        } else {
+          toast.error(resp.code[respCode]);
         }
-      } catch (e) {
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error("Something went wrong, please try again.");
+      } finally {
         setLoading(false);
-        console.log(e);
-        setApiCallErrMsg("Something went wrong, please try again");
       }
     }
   };
 
+  const doBodyDetailsExistCall = async (): Promise<boolean> => {
+    const resp = await http_get(`${apiUrl}/api/users/body_details/exists`);
+    console.log(resp);
+    const respCode = +Object.keys(resp.code)[0];
+    if (respCode === 200) {
+      const exists: boolean = resp.data["exists"];
+      return exists;
+    }
+
+    return false;
+  };
+
   useEffect(() => {
     const loginUser = async () => {
-      const resp = await http_post(`${apiUrl}/api/users/login`, {});
-      if (isRespDataWithHttpInfo(resp)) {
-        const respCodeStr = Object.keys(resp.code)[0];
-        const respCode = +respCodeStr; // Convert string to number
+      try {
+        const resp = await http_post(`${apiUrl}/api/users/login`, {});
+        const respCode = +Object.keys(resp.code)[0];
         if (respCode === 200) {
-          toast.success("Login successful"); //remove this later
-          // navigate to dashboard/home.
+          const doBodyDetailsExist = await doBodyDetailsExistCall();
+          navigate(doBodyDetailsExist ? "/dashboard" : "/addBodyDetails", {
+            state: { from: "login" },
+          });
         }
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error("Something went wrong, please try again.");
       }
     };
 
     loginUser();
-  }, []);
+  }, [apiUrl]);
 
   return (
-    <div className="main">
+    <div className={s.main}>
       <h1>SIGNIN</h1>
 
-      <div className="parentDiv">
-        <div className="formDiv">
+      <div className={s.parentDiv}>
+        <div className={s.formDiv}>
           <form onSubmit={handleSubmit}>
-            <div className="inputDiv">
+            <div className={s.inputDiv}>
               <p>Username</p>
               <input
                 type="text"
@@ -132,12 +147,12 @@ function Login() {
                 placeholder="Enter your username"
                 onChange={handleChange}
               />
-              {errors.username && <p className="error">{errors.username}</p>}
+              {errors.username && <p className={s.error}>{errors.username}</p>}
             </div>
 
-            <div className="inputDiv">
+            <div className={s.inputDiv}>
               <p>Password</p>
-              <div className="passwordContainer">
+              <div className={s.passwordContainer}>
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
@@ -146,7 +161,7 @@ function Login() {
                   onChange={handleChange}
                 />
                 <div
-                  className="showPasswordDiv"
+                  className={s.showPasswordDiv}
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -156,27 +171,24 @@ function Login() {
                   )}
                 </div>
               </div>
-              {errors.password && <p className="error">{errors.password}</p>}
+              {errors.password && <p className={s.error}>{errors.password}</p>}
             </div>
 
-            <div className="loginBtn">
+            <div className={s.loginBtn}>
               <button type="submit" disabled={loading}>
                 {loading ? <Spinner /> : "Login"}
               </button>
             </div>
-            {apiCallErrMsg && (
-              <p className="error apiErrorMsg">{apiCallErrMsg}</p>
-            )}
           </form>
 
-          <p className="signupPrompt">
+          <p className={s.signupPrompt}>
             Don't have an account?{" "}
             <span>
               <Link to="/signup">Sign up here</Link>
             </span>
           </p>
         </div>
-        <div className="imgDiv">
+        <div className={s.imgDiv}>
           <img src="/assets/login_illustration.svg" alt="login illustration" />
         </div>
       </div>

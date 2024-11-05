@@ -8,15 +8,11 @@ import (
 	"go.uber.org/zap"
 )
 
-type AddBodyDetailsReq struct {
-	Age       int     `json:"age"`
-	Weight_kg float64 `json:"weight"`
-	Height_cm int     `json:"height"`
-	Gender    string  `json:"gender"`
-	Goal      string  `json:"goal,omitempty"`
+type DoBodyDetailsExistResp struct {
+	Exists bool `json:"exists"`
 }
 
-func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
+func DoBodyDetailsExistHandler(w http.ResponseWriter, r *http.Request) {
 	resp := Response{}
 	resp.Code = make(map[int]string)
 
@@ -33,40 +29,10 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req AddBodyDetailsReq
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Info(
-			"failed to decode incoming json",
-			zap.Error(err),
-		)
-
-		resp.Code[http.StatusBadRequest] = "Invalid JSON data."
-		json.NewEncoder(w).Encode(&resp)
-		return
-	}
-
 	userId, err := lib.ExtractUserIdFromToken(tokenStr)
 	if err != nil {
 		log.Info(
-			"failed to extract username from token",
-			zap.String("tokenStr", tokenStr),
-			zap.Error(err),
-		)
-
-		resp.Code[http.StatusInternalServerError] = "Something went wrong, please try again."
-		json.NewEncoder(w).Encode(&resp)
-		return
-	}
-
-	if err := lib.AddUserBodyDetails(
-		*userId,
-		req.Age,
-		req.Height_cm,
-		req.Weight_kg,
-		req.Gender,
-	); err != nil {
-		log.Info(
-			"failed to add user body details by id",
+			"failed to get user id by token",
 			zap.String("userId", userId.String()),
 			zap.Error(err),
 		)
@@ -76,9 +42,10 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := lib.SetUserGoal(*userId, req.Goal); err != nil {
+	exists, err := lib.DoesBodyDetailsExist(*userId)
+	if err != nil {
 		log.Info(
-			"failed to set user weight goal by id",
+			"failed to check existence of body details by user id",
 			zap.String("userId", userId.String()),
 			zap.Error(err),
 		)
@@ -90,5 +57,9 @@ func AddBodyDetailsHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	resp.Code[http.StatusOK] = "OK"
+	data := &DoBodyDetailsExistResp{
+		Exists: *exists,
+	}
+	resp.Data = data
 	json.NewEncoder(w).Encode(&resp)
 }

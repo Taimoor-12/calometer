@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { http_post, isRespDataWithHttpInfo } from "./lib/http";
+import { http_post } from "./lib/http";
 import Spinner from "./components/Spinner";
 import { toast } from "react-toastify";
-import "./Signup.css";
+import s from "./Signup.module.css";
 
 interface ValidationErrors {
   fullName?: string;
@@ -111,51 +111,49 @@ function Signup() {
 
       try {
         const resp = await http_post(`${apiUrl}/api/users/signup`, body);
-        setLoading(false);
-        if (isRespDataWithHttpInfo(resp)) {
-          const respCodeStr = Object.keys(resp.code)[0];
-          const respCode: number = +respCodeStr
-          if (respCode === 409) {
-            toast.error(resp.code[respCode]);
-            setErrors({ ...errors, ["username"]: resp.code[respCode] });
-          } else if (respCode === 200) {
-            toast.success("Signed up successfully. Please log in");
-            navigate("/login");
-          } else {
-            toast.error(resp.code[respCode]);
-          }
+        console.log(resp);
+        const respCode = +Object.keys(resp.code)[0];
+        if (respCode === 200) {
+          navigate("/login");
+          toast.success("Signed up successfully. Please log in.");
+        } else {
+          toast.error(resp.code[respCode]);
         }
-      } catch (e) {
+      } catch (error) {
+        console.error("Login failed:", error);
+        toast.error("Something went wrong, please try again.");
+      } finally {
         setLoading(false);
-        toast.error("Something went wrong. Please try again.");
       }
     }
   };
 
   useEffect(() => {
     const signupUser = async () => {
-      const resp = await http_post(`${apiUrl}/api/users/signup`, {});
-      if (isRespDataWithHttpInfo(resp)) {
-        const respCodeStr = Object.keys(resp.code)[0];
-        const respCode = +respCodeStr; // Convert string to number
+      try {
+        const resp = await http_post(`${apiUrl}/api/users/signup`, {});
+        console.log(resp);
+        const respCode = +Object.keys(resp.code)[0];
         if (respCode === 200) {
-          toast.success("Login successful"); //remove this later
-          // navigate to dashboard/home.
+          navigate("/login");
         }
+      } catch (error) {
+        console.error("Signup failed:", error);
+        toast.error("Something went wrong, please try again.");
       }
     };
 
     signupUser();
-  }, []);
+  }, [apiUrl]);
 
   return (
-    <div className="main">
+    <div className={s.main}>
       <h1>SIGNUP</h1>
 
-      <div className="parentDiv">
-        <div className="formDiv">
+      <div className={s.parentDiv}>
+        <div className={s.formDiv}>
           <form onSubmit={handleSubmit}>
-            <div className="inputDiv">
+            <div className={s.inputDiv}>
               <p>Full Name</p>
               <input
                 type="text"
@@ -164,10 +162,10 @@ function Signup() {
                 placeholder="Enter your fullname"
                 onChange={handleChange}
               />
-              {errors.fullName && <p className="error">{errors.fullName}</p>}
+              {errors.fullName && <p className={s.error}>{errors.fullName}</p>}
             </div>
 
-            <div className="inputDiv">
+            <div className={s.inputDiv}>
               <p>Username</p>
               <input
                 type="text"
@@ -176,12 +174,12 @@ function Signup() {
                 placeholder="Enter your username"
                 onChange={handleChange}
               />
-              {errors.username && <p className="error">{errors.username}</p>}
+              {errors.username && <p className={s.error}>{errors.username}</p>}
             </div>
 
-            <div className="inputDiv">
+            <div className={s.inputDiv}>
               <p>Password</p>
-              <div className="passwordContainer">
+              <div className={s.passwordContainer}>
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
@@ -190,7 +188,7 @@ function Signup() {
                   onChange={handleChange}
                 />
                 <div
-                  className="showPasswordDiv"
+                  className={s.showPasswordDiv}
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -200,12 +198,12 @@ function Signup() {
                   )}
                 </div>
               </div>
-              {errors.password && <p className="error">{errors.password}</p>}
+              {errors.password && <p className={s.error}>{errors.password}</p>}
             </div>
 
-            <div className="inputDiv">
+            <div className={s.inputDiv}>
               <p>Confirm Password</p>
-              <div className="passwordContainer">
+              <div className={s.passwordContainer}>
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   name="confirmPassword"
@@ -214,7 +212,7 @@ function Signup() {
                   onChange={handleChange}
                 />
                 <div
-                  className="showPasswordDiv"
+                  className={s.showPasswordDiv}
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   {showConfirmPassword ? (
@@ -225,25 +223,25 @@ function Signup() {
                 </div>
               </div>
               {errors.confirmPassword && (
-                <p className="error">{errors.confirmPassword}</p>
+                <p className={s.error}>{errors.confirmPassword}</p>
               )}
             </div>
 
-            <div className="registerBtn">
+            <div className={s.registerBtn}>
               <button type="submit" disabled={loading}>
                 {loading ? <Spinner /> : "Register"}
               </button>
             </div>
           </form>
 
-          <p className="loginPrompt">
+          <p className={s.loginPrompt}>
             Already have an account?{" "}
             <span>
               <Link to="/login">Login here</Link>
             </span>
           </p>
         </div>
-        <div className="imgDiv">
+        <div className={s.imgDiv}>
           <img src="/assets/healthy_habit.svg" alt="healthy habit" />
         </div>
       </div>

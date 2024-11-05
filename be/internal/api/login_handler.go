@@ -51,8 +51,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userId, err := lib.GetUserIdByUsername(req.Username)
-	if err != nil {
-		log.Fatal(
+	if err == nil && userId == nil {
+		resp.Code[http.StatusUnauthorized] = "Username or password is incorrect."
+		json.NewEncoder(w).Encode(&resp)
+		return
+	} else if err != nil {
+		log.Info(
 			"failed to get user id by username",
 			zap.String("username", req.Username),
 		)
