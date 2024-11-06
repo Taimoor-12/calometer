@@ -1,4 +1,4 @@
-import "./Spinner.css";
+import "./Spinner.module.css";
 
 function Spinner() {
   return <div className="spinner"></div>;
