@@ -5,12 +5,28 @@ import { toast } from "react-toastify";
 import Navigation from "./components/Navigation";
 import s from "./Dashboard.module.css";
 
+interface UserCalorieLog {
+  LogDate: string;
+  CaloriesBurnt: number;
+  CaloriesConsumed: number;
+  Tdee: number;
+  Updated_at: string;
+  LogStatus: string;
+}
+
+interface GetCaloricLogsHandlerResp {
+  monthly_logs: {
+    [monthYear: string]: UserCalorieLog[];
+  };
+}
+
 const Dashboard = () => {
   const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
   const location = useLocation();
 
   const [netCaloricBalance, setNetCaloricBalance] = useState(0);
+  const [calorieLogs, setCalorieLogs] = useState<GetCaloricLogsHandlerResp>()
 
   const netCaloricBalanceCall = useCallback(async () => {
     try {
@@ -26,9 +42,30 @@ const Dashboard = () => {
     }
   }, [apiUrl]);
 
+  const getCalorieLogsCall = useCallback(async () => {
+    try {
+      const resp = await http_get(`${apiUrl}/api/users/log/get`)
+      const respCode = +Object.keys(resp.code)[0]
+      if (respCode === 200) {
+        console.log(resp);
+        setCalorieLogs(resp.data.monthly_logs)
+      }
+    } catch (e) {
+      toast.error("Something went wrong, please try again.");
+    }
+  }, [apiUrl])
+
   useEffect(() => {
     netCaloricBalanceCall();
   }, [netCaloricBalanceCall]);
+
+  useEffect(() => {
+    getCalorieLogsCall();
+  }, [getCalorieLogsCall])
+
+  useEffect(() => {
+    console.log(calorieLogs);
+  }, [calorieLogs])
 
   useEffect(() => {
     if (location.state?.from === "login") {
