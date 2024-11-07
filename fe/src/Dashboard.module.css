@@ -100,3 +100,13 @@
   color: #fff;
   cursor: pointer;
 }
+
+.plus {
+  color: #4CAF50;
+  font-size: 32px;
+}
+
+.minus {
+  color: #F44336;
+  font-size: 32px;
+}
