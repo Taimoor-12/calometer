@@ -77,7 +77,7 @@ const AddBodyDetails = () => {
       const resp = await http_post(`${apiUrl}/api/users/logout`, {});
       const respCode = +Object.keys(resp.code)[0];
       if (respCode === 200) {
-        navigate("/login");
+        navigate("/login", { state: { from: "addBodyDetails" } });
         toast.success("Logged out successfully");
       }
     } catch (e) {
@@ -92,9 +92,9 @@ const AddBodyDetails = () => {
     console.log(resp);
     const respCode = +Object.keys(resp.code)[0];
     if (respCode === 200) {
-      navigate("/dashboard")
+      navigate("/dashboard");
     } else if (respCode === 401) {
-      navigate("/login")
+      navigate("/login", { state: { from: "addBodyDetails" } });
     }
   }, [apiUrl, navigate]);
 
