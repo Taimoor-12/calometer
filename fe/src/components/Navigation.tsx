@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { http_post } from "../lib/http";
+import { toast } from "react-toastify";
 import s from "./Navigation.module.css";
 
 const Navigation = () => {
+  const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement | null>(null);
   const iconRef = useRef<HTMLDivElement | null>(null);
@@ -35,6 +38,19 @@ const Navigation = () => {
     };
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      const resp = await http_post(`${apiUrl}/api/users/logout`, {});
+      const respCode = +Object.keys(resp.code)[0];
+      if (respCode === 200) {
+        navigate("/login", { state: { from: "nav" } });
+        toast.success("Logged out successfully");
+      }
+    } catch (e) {
+      toast.error("Something went wrong, please try again.");
+    }
+  };
+
   return (
     <div className={s.navDiv}>
       <div className={s.logoDiv} onClick={handleLogoClick}>
@@ -49,7 +65,7 @@ const Navigation = () => {
           <img src="/assets/user.svg" alt="user" />
           <span>Profile</span>
         </div>
-        <div className={s.logoutDiv}>
+        <div className={s.logoutDiv} onClick={handleLogout}>
           <img src="/assets/logout.svg" alt="logout" />
           <span>Logout</span>
         </div>
