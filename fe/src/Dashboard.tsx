@@ -90,6 +90,8 @@ const Dashboard = () => {
     loginUser();
   }, [location.state, apiUrl, navigate]);
 
+  const months = calorieLogs ? Object.keys(calorieLogs) : []
+
   return (
     <div className={s.main}>
       <Navigation />
@@ -110,19 +112,12 @@ const Dashboard = () => {
           {netCaloricBalance}
         </p>
       </div>
-      <div className={s.tilesWrapperDiv}>
-        <div className={s.tilesDiv}>
-          <p>September, 2024</p>
-        </div>
-        <div className={s.tilesDiv}>
-          <p>October, 2024</p>
-        </div>
-        <div className={s.tilesDiv}>
-          <p>November, 2024</p>
-        </div>
-        <div className={s.tilesDiv}>
-          <p>November, 2024</p>
-        </div>
+      <div className={ months.length !== 0  ? s.tilesWrapperDiv : s.noLogsWrapper}>
+        {months.length !== 0 ? months.map((month) => (
+          <div key={month} className={s.tilesDiv}>
+            <p>{month}</p>
+          </div>
+        )) : <p>No logs exist</p>}
       </div>
       <div className={s.logAddDiv}>
         <button>+</button>

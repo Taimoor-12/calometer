@@ -110,3 +110,11 @@
   color: #F44336;
   font-size: 32px;
 }
+
+.noLogsWrapper {
+  margin-top: 18%;
+  font-size: 18px;
+  letter-spacing: 3px;
+  display: flex;
+  justify-content: center;
+}
