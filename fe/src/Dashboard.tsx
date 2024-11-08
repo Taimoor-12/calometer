@@ -64,10 +64,6 @@ const Dashboard = () => {
   }, [getCalorieLogsCall])
 
   useEffect(() => {
-    console.log(calorieLogs);
-  }, [calorieLogs])
-
-  useEffect(() => {
     if (location.state?.from === "login") {
       return;
     }
