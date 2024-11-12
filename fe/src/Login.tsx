@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { http_get, http_post } from "./lib/http";
 import { toast } from "react-toastify";
 import Spinner from "./components/Spinner";
@@ -13,6 +13,7 @@ interface ValidationErrors {
 function Login() {
   const apiUrl = process.env.REACT_APP_API_URL;
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -99,7 +100,7 @@ function Login() {
     }
   };
 
-  const doBodyDetailsExistCall = async (): Promise<boolean> => {
+  const doBodyDetailsExistCall = useCallback(async (): Promise<boolean> => {
     const resp = await http_get(`${apiUrl}/api/users/body_details/exists`);
     console.log(resp);
     const respCode = +Object.keys(resp.code)[0];
@@ -109,9 +110,13 @@ function Login() {
     }
 
     return false;
-  };
+  }, [apiUrl]);
 
   useEffect(() => {
+    if (location.state && location.state.from !== "login") {
+      return;
+    }
+
     const loginUser = async () => {
       try {
         const resp = await http_post(`${apiUrl}/api/users/login`, {});
@@ -129,7 +134,7 @@ function Login() {
     };
 
     loginUser();
-  }, [apiUrl]);
+  }, [location.state, apiUrl, navigate, doBodyDetailsExistCall]);
 
   return (
     <div className={s.main}>

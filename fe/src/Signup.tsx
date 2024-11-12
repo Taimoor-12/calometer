@@ -144,7 +144,7 @@ function Signup() {
     };
 
     signupUser();
-  }, [apiUrl]);
+  }, [apiUrl, navigate]);
 
   return (
     <div className={s.main}>

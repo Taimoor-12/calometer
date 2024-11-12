@@ -1,0 +1,82 @@
+.container, .overlay {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.overlay {
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+}
+
+.contentWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #f7f7f7;
+  border: 1px solid black;
+  border-radius: 10px;
+}
+
+.contentDiv {
+  padding-left: 90px;
+  padding-right: 90px;
+}
+
+.contentDiv h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 22px;
+  margin-top: 120px;
+}
+
+.contentWrapper img {
+  float: right;
+  padding: 32px;
+  cursor: pointer;
+}
+
+.inputDiv {
+  margin-top: 90px;
+}
+
+.btnDiv {
+  margin-top: 220px;
+  margin-bottom: 111px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btnDiv button {
+  width: 169px;
+  height: 54px;
+  background-color: #2196F3;
+  border: 0;
+  border-radius: 5px;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  color: #FFF;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.dateInput {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+  outline: none;
+}
+
+.dateInput:focus {
+  border-color: #5b9bd5;
+}

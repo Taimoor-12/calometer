@@ -3,6 +3,7 @@ package lib
 import (
 	"calometer/internal/db"
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -69,7 +70,7 @@ func DeleteCaloricBalanceByLogId(logId uuid.UUID) error {
 }
 
 func GetNetCaloricBalance(userId uuid.UUID) (*float64, error) {
-	var netCaloricBalance float64
+	var netCaloricBalance sql.NullFloat64
 
 	qStr := `
 		SELECT SUM(user_caloric_balance.caloric_balance)
@@ -83,5 +84,10 @@ func GetNetCaloricBalance(userId uuid.UUID) (*float64, error) {
 		return nil, err
 	}
 
-	return &netCaloricBalance, nil
+	if !netCaloricBalance.Valid {
+		defaultValue := 0.0
+		return &defaultValue, nil
+	}
+
+	return &netCaloricBalance.Float64, nil
 }

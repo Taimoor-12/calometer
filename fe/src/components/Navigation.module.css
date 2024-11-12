@@ -1,0 +1,50 @@
+.navDiv {
+  margin-top: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.logoDiv {
+  cursor: pointer;
+}
+
+.iconDiv {
+  cursor: pointer;
+}
+
+.modalDiv {
+  width: 201px;
+  height: 136px;
+}
+
+.modalDivFlex {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  background-color: #fff;
+  border-radius: 15px;
+  font-size: 18px;
+  font-weight: 600;
+  position: absolute;
+  right: 0;
+  top: 52px;
+}
+
+.modalDivHidden {
+  display: none;
+}
+
+.profileDiv, .logoutDiv {
+  display: flex;
+  align-items: center;
+  margin-left: 20px;
+  gap: 13px;
+  cursor: pointer;
+}
+
+.logoutDiv img {
+  transform: translateX(3px);
+}

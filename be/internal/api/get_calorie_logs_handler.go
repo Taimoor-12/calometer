@@ -9,7 +9,7 @@ import (
 )
 
 type GetCaloricLogsHandlerResp struct {
-	Logs *[]lib.UserCalorieLogs `json:"logs"`
+	MonthlyLogs map[string][]lib.UserCalorieLogs `json:"monthly_logs"`
 }
 
 func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,8 +42,7 @@ func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userCalorieLogs *[]lib.UserCalorieLogs
-	userCalorieLogs, err = lib.GetCalorieLogs(*userId)
+	monthlyLogs, err := lib.GetCalorieLogs(*userId)
 	if err != nil {
 		log.Info(
 			"failed to get logs by user id",
@@ -59,7 +58,7 @@ func GetCalorieLogsHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	data := &GetCaloricLogsHandlerResp{
-		Logs: userCalorieLogs,
+		MonthlyLogs: monthlyLogs,
 	}
 
 	resp.Code[http.StatusOK] = "OK"

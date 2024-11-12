@@ -186,8 +186,8 @@ type UserCalorieLogs struct {
 	LogStatus        string
 }
 
-func GetCalorieLogs(userId uuid.UUID) (*[]UserCalorieLogs, error) {
-	var userCalorieLogs []UserCalorieLogs
+func GetCalorieLogs(userId uuid.UUID) (map[string][]UserCalorieLogs, error) {
+	monthlyLogs := make(map[string][]UserCalorieLogs)
 
 	qStr := `
 		SELECT
@@ -199,12 +199,14 @@ func GetCalorieLogs(userId uuid.UUID) (*[]UserCalorieLogs, error) {
 			log_status
 		FROM user_calorie_logs
 		WHERE u_id = $1
+		ORDER BY log_date
 	`
 
 	rows, err := db.GetPool().Query(context.Background(), qStr, userId)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var log UserCalorieLogs
@@ -222,16 +224,19 @@ func GetCalorieLogs(userId uuid.UUID) (*[]UserCalorieLogs, error) {
 			return nil, err
 		}
 
+		// Format date for monthly grouping, e.g., "September 2024"
+		monthYearKey := logDate.Format("January, 2006")
 		log.LogDate = logDate.Format("2006-01-02")
 
-		userCalorieLogs = append(userCalorieLogs, log)
+		// Append the log to the appropriate month/year in the map
+		monthlyLogs[monthYearKey] = append(monthlyLogs[monthYearKey], log)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return &userCalorieLogs, nil
+	return monthlyLogs, nil
 }
 
 func UpdateCalorieLog(
