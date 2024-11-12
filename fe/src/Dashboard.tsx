@@ -4,6 +4,7 @@ import { http_get, http_post } from "./lib/http";
 import { toast } from "react-toastify";
 import Navigation from "./components/Navigation";
 import s from "./Dashboard.module.css";
+import CreateLogModal from "./components/CreateLogModal";
 
 interface UserCalorieLog {
   LogDate: string;
@@ -26,7 +27,8 @@ const Dashboard = () => {
   const location = useLocation();
 
   const [netCaloricBalance, setNetCaloricBalance] = useState(0);
-  const [calorieLogs, setCalorieLogs] = useState<GetCaloricLogsHandlerResp>()
+  const [calorieLogs, setCalorieLogs] = useState<GetCaloricLogsHandlerResp>();
+  const [isAddLogModalOpen, setIsAddLogModalOpen] = useState(false);
 
   const netCaloricBalanceCall = useCallback(async () => {
     try {
@@ -72,7 +74,7 @@ const Dashboard = () => {
       try {
         const resp = await http_post(`${apiUrl}/api/users/login`, {});
         const respCode = +Object.keys(resp.code)[0];
-        if (respCode === 401) {
+        if (respCode !== 200) {
           navigate("/login", {
             state: { from: "dashboard" },
           });
@@ -85,6 +87,10 @@ const Dashboard = () => {
 
     loginUser();
   }, [location.state, apiUrl, navigate]);
+
+  const toggleModalOpen = () => {
+    setIsAddLogModalOpen((prev) => !prev)
+  }
 
   const months = calorieLogs ? Object.keys(calorieLogs) : []
 
@@ -115,9 +121,11 @@ const Dashboard = () => {
           </div>
         )) : <p>No logs exist</p>}
       </div>
-      <div className={s.logAddDiv}>
+      <div className={s.logAddDiv} onClick={toggleModalOpen}>
         <button>+</button>
       </div>
+
+      {isAddLogModalOpen ? <CreateLogModal toggleModalOpen={toggleModalOpen}/> : null}
     </div>
   );
 };
