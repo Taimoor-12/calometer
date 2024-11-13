@@ -6,6 +6,7 @@ import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import AddBodyDetails from "./AddBodyDetails";
 import Dashboard from "./Dashboard";
+import MainLayout from "./MainLayout";
 
 function App() {
   return (
@@ -15,7 +16,9 @@ function App() {
         <Route path="/signup" element={<Signup/>} />
         <Route path="/login" element={<Login/>} />
         <Route path="/addBodyDetails" element={<AddBodyDetails/>} />
-        <Route path="/dashboard" element={<Dashboard/>} />
+        <Route element={<MainLayout />}>
+          <Route path="/dashboard" element={<Dashboard/>} />
+        </Route>
       </Routes>
     </Router>
   );
