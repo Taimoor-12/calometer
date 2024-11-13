@@ -96,7 +96,6 @@ const Dashboard = () => {
 
   return (
     <div className={s.main}>
-      <Navigation />
       <div className={s.netBalanceDiv}>
         <p>
           NET CALORIC BALANCE:{" "}
