@@ -1,0 +1,20 @@
+.netBalanceDiv {
+  margin-top: 112px;
+}
+
+.netBalanceDiv p {
+  font-size: 32px;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 16px;
+  font-weight: 700;
+}
+
+.plus {
+  color: #4CAF50;
+  font-size: 32px;
+}
+
+.minus {
+  color: #F44336;
+  font-size: 32px;
+}
