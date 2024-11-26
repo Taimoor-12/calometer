@@ -3,8 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { http_get, http_post } from "./lib/http";
 import { toast } from "react-toastify";
 import NetCaloricBalance from "./components/NetCaloricBalance";
-import s from "./Dashboard.module.css";
 import CreateLogModal from "./components/CreateLogModal";
+import LogList from "./LogList";
+import s from "./Dashboard.module.css";
 
 interface UserCalorieLog {
   LogDate: string;
@@ -26,7 +27,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [calorieLogs, setCalorieLogs] = useState<GetCaloricLogsHandlerResp["monthly_logs"]>();
+  const [calorieLogs, setCalorieLogs] =
+    useState<GetCaloricLogsHandlerResp["monthly_logs"]>();
   const [isAddLogModalOpen, setIsAddLogModalOpen] = useState(false);
   const [isTileClicked, setIsTileClicked] = useState(false);
 
@@ -76,11 +78,11 @@ const Dashboard = () => {
 
   const handleTileClick = (month: string) => {
     setIsTileClicked(true);
-    console.log(month)
+    console.log(month);
     if (calorieLogs) {
-      console.log(calorieLogs[month])
+      console.log(calorieLogs[month]);
     }
-  }
+  };
 
   const months = calorieLogs ? Object.keys(calorieLogs) : [];
 
@@ -97,7 +99,11 @@ const Dashboard = () => {
           >
             {months.length !== 0 ? (
               months.map((month) => (
-                <div key={month} className={s.tilesDiv} onClick={() => handleTileClick(month)}>
+                <div
+                  key={month}
+                  className={s.tilesDiv}
+                  onClick={() => handleTileClick(month)}
+                >
                   <p>{month}</p>
                 </div>
               ))
@@ -113,7 +119,9 @@ const Dashboard = () => {
             <CreateLogModal toggleModalOpen={toggleModalOpen} />
           ) : null}
         </>
-      ) : null}
+      ) : (
+        <LogList setIsTileClicked={setIsTileClicked}/>
+      )}
     </div>
   );
 };
