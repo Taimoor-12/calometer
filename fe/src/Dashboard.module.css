@@ -4,17 +4,6 @@
   position: relative;
 }
 
-.netBalanceDiv {
-  margin-top: 112px;
-}
-
-.netBalanceDiv p {
-  font-size: 32px;
-  font-family: 'Poppins', sans-serif;
-  letter-spacing: 16px;
-  font-weight: 700;
-}
-
 .tilesWrapperDiv {
   margin-top: 62px;
   margin-right: -140px;
@@ -99,16 +88,6 @@
   border: none;
   color: #fff;
   cursor: pointer;
-}
-
-.plus {
-  color: #4CAF50;
-  font-size: 32px;
-}
-
-.minus {
-  color: #F44336;
-  font-size: 32px;
 }
 
 .noLogsWrapper {

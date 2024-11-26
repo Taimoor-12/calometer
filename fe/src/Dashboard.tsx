@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { http_get, http_post } from "./lib/http";
 import { toast } from "react-toastify";
+import NetCaloricBalance from "./components/NetCaloricBalance";
 import Navigation from "./components/Navigation";
 import s from "./Dashboard.module.css";
 import CreateLogModal from "./components/CreateLogModal";
@@ -26,23 +27,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [netCaloricBalance, setNetCaloricBalance] = useState(0);
   const [calorieLogs, setCalorieLogs] = useState<GetCaloricLogsHandlerResp>();
   const [isAddLogModalOpen, setIsAddLogModalOpen] = useState(false);
-
-  const netCaloricBalanceCall = useCallback(async () => {
-    try {
-      const resp = await http_get(
-        `${apiUrl}/api/users/net_caloric_balance/get`
-      );
-      const respCode = +Object.keys(resp.code)[0];
-      if (respCode === 200) {
-        setNetCaloricBalance(resp.data.net_caloric_balance);
-      }
-    } catch (e) {
-      toast.error("Something went wrong, please try again.");
-    }
-  }, [apiUrl]);
 
   const getCalorieLogsCall = useCallback(async () => {
     try {
@@ -56,10 +42,6 @@ const Dashboard = () => {
       toast.error("Something went wrong, please try again.");
     }
   }, [apiUrl])
-
-  useEffect(() => {
-    netCaloricBalanceCall();
-  }, [netCaloricBalanceCall]);
 
   useEffect(() => {
     getCalorieLogsCall();
@@ -96,23 +78,8 @@ const Dashboard = () => {
 
   return (
     <div className={s.main}>
-      <div className={s.netBalanceDiv}>
-        <p>
-          NET CALORIC BALANCE:{" "}
-          <span
-            className={
-              netCaloricBalance > 0
-                ? s.plus
-                : netCaloricBalance < 0
-                ? s.minus
-                : ""
-            }
-          >
-            {netCaloricBalance > 0 ? "+" : netCaloricBalance < 0 ? "-" : ""}
-          </span>
-          {netCaloricBalance}
-        </p>
-      </div>
+      <NetCaloricBalance />
+      
       <div className={ months.length !== 0  ? s.tilesWrapperDiv : s.noLogsWrapper}>
         {months.length !== 0 ? months.map((month) => (
           <div key={month} className={s.tilesDiv}>
